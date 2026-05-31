@@ -1,0 +1,447 @@
+name: circleci
+version: 0.1.0
+dsl_version: 3
+backend: http
+description: >-
+  Query CircleCI pipelines, workflow runs, job results, and workflow performance
+  metrics via the CircleCI API v2. Supports project-scoped pipeline history,
+  per-pipeline workflow status, per-workflow job details, and aggregated
+  insights (success rate, p50/p95 duration, throughput).
+
+base_url: https://circleci.com/api/v2
+
+inputs:
+  CIRCLECI_TOKEN:
+    kind: secret
+    hint: >-
+      CircleCI personal API token. Create one at
+      https://app.circleci.com/settings/user/tokens under "Personal API Tokens".
+      The token needs read access to the projects you want to query.
+  CIRCLECI_ORG_SLUG:
+    kind: variable
+    default: ""
+    hint: >-
+      Default org slug used to scope pipeline and insights queries, e.g.
+      "gh/myorg" for a GitHub-backed CircleCI org. Can be overridden per query
+      using the project_slug filter.
+
+auth:
+  type: HeaderAuth
+  headers:
+    - name: Circle-Token
+      from: input
+      key: CIRCLECI_TOKEN
+
+rate_limit:
+  remaining_header: X-RateLimit-Remaining
+  reset_header: X-RateLimit-Reset
+
+test_queries:
+  - SELECT id, number, state, created_at FROM circleci.pipelines WHERE project_slug = 'gh/myorg/myrepo' LIMIT 1
+  - SELECT name, status, p50_duration_secs, success_rate FROM circleci.workflow_metrics WHERE project_slug = 'gh/myorg/myrepo' LIMIT 5
+  - SELECT * FROM circleci.workflows('pipeline-id-here') LIMIT 1
+  - SELECT * FROM circleci.jobs('workflow-id-here') LIMIT 1
+
+tables:
+  # ── pipelines ─────────────────────────────────────────────────────────────
+  - name: pipelines
+    description: >
+      Recent pipeline runs for a project. Each row is one triggered pipeline —
+      a push, PR, schedule, or manual trigger. Use project_slug to scope to a
+      specific repo (format: "gh/org/repo" or "bb/org/repo"). Filter by branch
+      to narrow to a specific branch. JOIN with circleci.workflows() and
+      circleci.jobs() table functions to drill into individual job results.
+    guide: >
+      Start with `SELECT id, number, state, vcs_branch, vcs_revision,
+      trigger_type, created_at FROM circleci.pipelines WHERE project_slug =
+      'gh/myorg/myrepo' LIMIT 20`. Use vcs_revision to JOIN with github.pulls
+      on head_sha to correlate CI outcomes with specific pull requests.
+    filters:
+      - name: project_slug
+        required: true
+      - name: branch
+      - name: mine
+    request:
+      method: GET
+      path: /project/{{filter.project_slug}}/pipeline
+      query:
+        - name: branch
+          from: filter
+          key: branch
+        - name: mine
+          from: filter
+          key: mine
+    response:
+      rows_path:
+        - items
+    pagination:
+      mode: cursor_query
+      response_cursor_path:
+        - next_page_token
+      cursor_param: page-token
+    columns:
+      - name: project_slug
+        type: Utf8
+        nullable: true
+        description: "Project slug in vcs/org/repo format (e.g. gh/myorg/myrepo). Matches the filter used to scope the query."
+        expr:
+          kind: path
+          path: [project_slug]
+      - name: id
+        type: Utf8
+        nullable: false
+        description: Pipeline UUID.
+        expr:
+          kind: path
+          path: [id]
+      - name: number
+        type: Int64
+        nullable: true
+        description: Pipeline sequence number within the project.
+        expr:
+          kind: path
+          path: [number]
+      - name: state
+        type: Utf8
+        nullable: true
+        description: "Pipeline state: created, errored, setup-pending, setup, pending."
+        expr:
+          kind: path
+          path: [state]
+      - name: trigger_type
+        type: Utf8
+        nullable: true
+        description: What triggered this pipeline (push, api, scheduled_pipeline, etc.).
+        expr:
+          kind: path
+          path: [trigger, type]
+      - name: trigger_actor_login
+        type: Utf8
+        nullable: true
+        description: GitHub/Bitbucket username of the actor who triggered the pipeline.
+        expr:
+          kind: path
+          path: [trigger, actor, login]
+      - name: vcs_branch
+        type: Utf8
+        nullable: true
+        description: Git branch this pipeline ran against.
+        expr:
+          kind: path
+          path: [vcs, branch]
+      - name: vcs_revision
+        type: Utf8
+        nullable: true
+        description: Git commit SHA. JOIN with github.pulls.head_sha to link PRs to CI runs.
+        expr:
+          kind: path
+          path: [vcs, revision]
+      - name: vcs_commit_subject
+        type: Utf8
+        nullable: true
+        description: Commit message subject line.
+        expr:
+          kind: path
+          path: [vcs, commit, subject]
+      - name: vcs_origin_repository_url
+        type: Utf8
+        nullable: true
+        description: URL of the repository (e.g. https://github.com/org/repo).
+        expr:
+          kind: path
+          path: [vcs, origin_repository_url]
+      - name: created_at
+        type: Utf8
+        nullable: true
+        description: ISO-8601 timestamp when the pipeline was created.
+        expr:
+          kind: path
+          path: [created_at]
+      - name: updated_at
+        type: Utf8
+        nullable: true
+        description: ISO-8601 timestamp of the last state change.
+        expr:
+          kind: path
+          path: [updated_at]
+
+  # ── workflow_metrics ───────────────────────────────────────────────────────
+  - name: workflow_metrics
+    description: >
+      Aggregated performance metrics for each workflow in a project, computed
+      over a rolling time window. Includes success rate, p50/p95 duration,
+      throughput (runs per day), and total run counts. Use this to spot
+      slow or flaky workflows without pulling individual run history.
+    guide: >
+      `SELECT name, status, success_rate, p50_duration_secs,
+      p95_duration_secs, throughput FROM circleci.workflow_metrics
+      WHERE project_slug = 'gh/myorg/myrepo' ORDER BY p95_duration_secs DESC`
+      surfaces your slowest workflows. Combine with circleci.pipelines and
+      sentry.issues for an engineering health cross-source query.
+    filters:
+      - name: project_slug
+        required: true
+      - name: workflow_name
+      - name: branch
+      - name: reporting_window
+    request:
+      method: GET
+      path: /insights/{{filter.project_slug}}/workflows
+      query:
+        - name: workflow-name
+          from: filter
+          key: workflow_name
+        - name: branch
+          from: filter
+          key: branch
+        - name: reporting-window
+          from: filter
+          key: reporting_window
+    response:
+      rows_path:
+        - items
+    pagination:
+      mode: cursor_query
+      response_cursor_path:
+        - next_page_token
+      cursor_param: page-token
+    columns:
+      - name: project_slug
+        type: Utf8
+        nullable: true
+        description: "Project slug in vcs/org/repo format. Matches the filter used to scope the query."
+        expr:
+          kind: path
+          path: [project_slug]
+      - name: name
+        type: Utf8
+        nullable: false
+        description: Workflow name as defined in .circleci/config.yml.
+        expr:
+          kind: path
+          path: [name]
+      - name: window_start
+        type: Utf8
+        nullable: true
+        description: Start of the reporting window (ISO-8601).
+        expr:
+          kind: path
+          path: [window_start]
+      - name: window_end
+        type: Utf8
+        nullable: true
+        description: End of the reporting window (ISO-8601).
+        expr:
+          kind: path
+          path: [window_end]
+      - name: success_rate
+        type: Float64
+        nullable: true
+        description: Fraction of runs that succeeded (0.0–1.0).
+        expr:
+          kind: path
+          path: [metrics, success_rate]
+      - name: total_runs
+        type: Int64
+        nullable: true
+        description: Total workflow runs in the reporting window.
+        expr:
+          kind: path
+          path: [metrics, total_runs]
+      - name: failed_runs
+        type: Int64
+        nullable: true
+        description: Number of failed runs.
+        expr:
+          kind: path
+          path: [metrics, failed_runs]
+      - name: p50_duration_secs
+        type: Float64
+        nullable: true
+        description: Median workflow duration in seconds.
+        expr:
+          kind: path
+          path: [metrics, duration_metrics, p50]
+      - name: p95_duration_secs
+        type: Float64
+        nullable: true
+        description: 95th-percentile workflow duration in seconds (tail latency).
+        expr:
+          kind: path
+          path: [metrics, duration_metrics, p95]
+      - name: throughput
+        type: Float64
+        nullable: true
+        description: Average runs per day over the reporting window.
+        expr:
+          kind: path
+          path: [metrics, throughput]
+
+functions:
+  # ── workflows(pipeline_id) ─────────────────────────────────────────────────
+  - name: workflows
+    description: >
+      Returns all workflow runs for a specific pipeline. Call as
+      circleci.workflows(pipeline_id => '<uuid>') and JOIN with
+      circleci.pipelines on id to traverse the pipeline → workflow hierarchy.
+    args:
+      - name: pipeline_id
+        required: true
+        bind:
+          arg: pipeline_id
+    request:
+      method: GET
+      path: /pipeline/{{arg.pipeline_id}}/workflow
+    response:
+      rows_path:
+        - items
+    pagination:
+      mode: cursor_query
+      response_cursor_path:
+        - next_page_token
+      cursor_param: page-token
+    columns:
+      - name: id
+        type: Utf8
+        nullable: false
+        description: Workflow UUID.
+        expr:
+          kind: path
+          path: [id]
+      - name: name
+        type: Utf8
+        nullable: true
+        description: Workflow name from config.
+        expr:
+          kind: path
+          path: [name]
+      - name: status
+        type: Utf8
+        nullable: true
+        description: "Workflow status: success, failed, error, canceled, failing, on_hold, unauthorized."
+        expr:
+          kind: path
+          path: [status]
+      - name: pipeline_id
+        type: Utf8
+        nullable: true
+        description: UUID of the parent pipeline.
+        expr:
+          kind: path
+          path: [pipeline_id]
+      - name: pipeline_number
+        type: Int64
+        nullable: true
+        description: Sequence number of the parent pipeline.
+        expr:
+          kind: path
+          path: [pipeline_number]
+      - name: created_at
+        type: Utf8
+        nullable: true
+        description: ISO-8601 timestamp when the workflow started.
+        expr:
+          kind: path
+          path: [created_at]
+      - name: stopped_at
+        type: Utf8
+        nullable: true
+        description: ISO-8601 timestamp when the workflow ended (null if still running).
+        expr:
+          kind: path
+          path: [stopped_at]
+
+  # ── jobs(workflow_id) ─────────────────────────────────────────────────────
+  - name: jobs
+    description: >
+      Returns all job runs for a specific workflow. Each row is one job
+      execution with its status, duration, and executor details. Call as
+      circleci.jobs(workflow_id => '<uuid>'). Use with circleci.workflows()
+      to drill from pipeline → workflow → job.
+    args:
+      - name: workflow_id
+        required: true
+        bind:
+          arg: workflow_id
+    request:
+      method: GET
+      path: /workflow/{{arg.workflow_id}}/job
+    response:
+      rows_path:
+        - items
+    pagination:
+      mode: cursor_query
+      response_cursor_path:
+        - next_page_token
+      cursor_param: page-token
+    columns:
+      - name: id
+        type: Utf8
+        nullable: false
+        description: Job run UUID.
+        expr:
+          kind: path
+          path: [id]
+      - name: name
+        type: Utf8
+        nullable: true
+        description: Job name from config (e.g. "test", "build", "lint").
+        expr:
+          kind: path
+          path: [name]
+      - name: status
+        type: Utf8
+        nullable: true
+        description: "Job status: success, failed, canceled, running, blocked, not_run, retried."
+        expr:
+          kind: path
+          path: [status]
+      - name: type
+        type: Utf8
+        nullable: true
+        description: Job type (build or approval).
+        expr:
+          kind: path
+          path: [type]
+      - name: job_number
+        type: Int64
+        nullable: true
+        description: Job sequence number within the project.
+        expr:
+          kind: path
+          path: [job_number]
+      - name: workflow_id
+        type: Utf8
+        nullable: true
+        description: UUID of the parent workflow.
+        expr:
+          kind: path
+          path: [dependencies]
+      - name: started_at
+        type: Utf8
+        nullable: true
+        description: ISO-8601 timestamp when the job started.
+        expr:
+          kind: path
+          path: [started_at]
+      - name: stopped_at
+        type: Utf8
+        nullable: true
+        description: ISO-8601 timestamp when the job ended.
+        expr:
+          kind: path
+          path: [stopped_at]
+      - name: approved_by
+        type: Utf8
+        nullable: true
+        description: Username of the approver (for approval jobs only).
+        expr:
+          kind: path
+          path: [approved_by]
+      - name: project_slug
+        type: Utf8
+        nullable: true
+        description: Project slug in the format vcs-slug/org-name/repo-name.
+        expr:
+          kind: path
+          path: [project_slug]

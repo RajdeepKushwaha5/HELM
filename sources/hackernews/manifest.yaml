@@ -1,0 +1,255 @@
+name: hackernews
+version: 0.1.0
+dsl_version: 3
+backend: http
+description: >-
+  Search Hacker News stories and comments via the Algolia HN Search API.
+  No authentication required. Use it to mine public sentiment, pain signals,
+  launches, and discussion around any topic, product, or company — then join
+  with other Coral sources for cross-source market and prospecting intelligence.
+
+base_url: https://hn.algolia.com/api/v1
+
+request_headers:
+  - name: Accept
+    from: literal
+    value: application/json
+
+rate_limit:
+  extra_statuses:
+    - 429
+  retry_after_header: Retry-After
+
+test_queries:
+  - SELECT object_id, title, points FROM hackernews.search(query => 'coral') LIMIT 1
+  - SELECT object_id, title, author FROM hackernews.search_by_date(query => 'postgres') LIMIT 1
+
+functions:
+  - name: search
+    kind: search
+    description: >-
+      Search Hacker News stories ranked by relevance (Algolia popularity rank).
+      Pass a query string; returns matching stories with title, author, points,
+      comment count, URL, and the story text. Best for finding the most-discussed
+      posts about a topic, product, or company.
+    fetch_limit_default: 50
+    search_limits:
+      default_top_k: 50
+      max_top_k: 200
+      max_calls_per_query: 1
+    args:
+      - name: query
+        required: true
+        bind:
+          arg: query
+    request:
+      method: GET
+      path: /search
+      query:
+        - name: query
+          from: arg
+          key: query
+        - name: tags
+          from: literal
+          value: story
+    response:
+      rows_path:
+        - hits
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 0
+      page_step: 1
+      offset_start: 0
+      page_size:
+        default: 50
+        max: 200
+        query_param: hitsPerPage
+      link_header_require_results: false
+    columns:
+      - name: object_id
+        type: Utf8
+        nullable: false
+        description: Unique HN item ID. Open at https://news.ycombinator.com/item?id=<object_id>.
+        expr:
+          kind: path
+          path:
+            - objectID
+      - name: title
+        type: Utf8
+        nullable: true
+        description: Story title.
+        expr:
+          kind: path
+          path:
+            - title
+      - name: author
+        type: Utf8
+        nullable: true
+        description: HN username of the submitter.
+        expr:
+          kind: path
+          path:
+            - author
+      - name: points
+        type: Int64
+        nullable: true
+        description: Story score (upvotes). Higher means more visibility and signal strength.
+        expr:
+          kind: path
+          path:
+            - points
+      - name: num_comments
+        type: Int64
+        nullable: true
+        description: Number of comments — a proxy for how much discussion the topic drew.
+        expr:
+          kind: path
+          path:
+            - num_comments
+      - name: url
+        type: Utf8
+        nullable: true
+        description: External URL the story links to (null for text/Ask HN posts).
+        expr:
+          kind: path
+          path:
+            - url
+      - name: story_text
+        type: Utf8
+        nullable: true
+        description: Body text for Ask HN / text posts (null for link posts).
+        expr:
+          kind: path
+          path:
+            - story_text
+      - name: created_at
+        type: Utf8
+        nullable: true
+        description: ISO 8601 timestamp when the story was posted.
+        expr:
+          kind: path
+          path:
+            - created_at
+      - name: created_at_i
+        type: Int64
+        nullable: true
+        description: Unix epoch seconds when the story was posted. Use for time-window filtering.
+        expr:
+          kind: path
+          path:
+            - created_at_i
+
+  - name: search_by_date
+    kind: search
+    description: >-
+      Search Hacker News stories ordered by most recent first. Same shape as
+      search, but chronological instead of relevance-ranked. Best for monitoring
+      fresh discussion or recent complaints about a topic.
+    fetch_limit_default: 50
+    search_limits:
+      default_top_k: 50
+      max_top_k: 200
+      max_calls_per_query: 1
+    args:
+      - name: query
+        required: true
+        bind:
+          arg: query
+    request:
+      method: GET
+      path: /search_by_date
+      query:
+        - name: query
+          from: arg
+          key: query
+        - name: tags
+          from: literal
+          value: story
+    response:
+      rows_path:
+        - hits
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 0
+      page_step: 1
+      offset_start: 0
+      page_size:
+        default: 50
+        max: 200
+        query_param: hitsPerPage
+      link_header_require_results: false
+    columns:
+      - name: object_id
+        type: Utf8
+        nullable: false
+        description: Unique HN item ID. Open at https://news.ycombinator.com/item?id=<object_id>.
+        expr:
+          kind: path
+          path:
+            - objectID
+      - name: title
+        type: Utf8
+        nullable: true
+        description: Story title.
+        expr:
+          kind: path
+          path:
+            - title
+      - name: author
+        type: Utf8
+        nullable: true
+        description: HN username of the submitter.
+        expr:
+          kind: path
+          path:
+            - author
+      - name: points
+        type: Int64
+        nullable: true
+        description: Story score (upvotes).
+        expr:
+          kind: path
+          path:
+            - points
+      - name: num_comments
+        type: Int64
+        nullable: true
+        description: Number of comments on the story.
+        expr:
+          kind: path
+          path:
+            - num_comments
+      - name: url
+        type: Utf8
+        nullable: true
+        description: External URL the story links to (null for text/Ask HN posts).
+        expr:
+          kind: path
+          path:
+            - url
+      - name: story_text
+        type: Utf8
+        nullable: true
+        description: Body text for Ask HN / text posts (null for link posts).
+        expr:
+          kind: path
+          path:
+            - story_text
+      - name: created_at
+        type: Utf8
+        nullable: true
+        description: ISO 8601 timestamp when the story was posted.
+        expr:
+          kind: path
+          path:
+            - created_at
+      - name: created_at_i
+        type: Int64
+        nullable: true
+        description: Unix epoch seconds when the story was posted.
+        expr:
+          kind: path
+          path:
+            - created_at_i

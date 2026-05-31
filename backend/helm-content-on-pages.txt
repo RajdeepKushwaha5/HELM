@@ -1,0 +1,3486 @@
+Coral command surface
+
+Mission Control
+One command surface for live source health, incident causality, delivery risk, and AI-ready SQL evidence.
+Ask Helm
+Investigate Signal
+Live command graph
+Incident causality, source health, and AI-safe actions in one view
+Open Graph
+Live Incident Intelligence
+Github
+Sentry
+PagerDuty
+Slack
+4-source JOIN
+9387ms
+8 chains
+0 writes
+FROM github.pulls JOIN sentry.issues ON time_window LEFT JOIN pagerduty.incidents LEFT JOIN slack.messages
+— evidence_score = fatal×40 + incident×30 + slack×20 + volume×10
+
+20
+/100
+PR #9
+Release checkout validation regression demo-20260522-181604
+@RajdeepKushwaha5
+May 22, 12:46 PM
+PR #9
+Release checkout validation re
+error
+1 events
+no incident
+no signal
+20
+/100
+PR #18
+Release checkout validation regression release-20260523-024714
+@RajdeepKushwaha5
+May 22, 09:17 PM
+PR #18
+Release checkout validation re
+error
+1 events
+no incident
+no signal
+20
+/100
+PR #13
+Release checkout validation regression release-20260522-190518
+@RajdeepKushwaha5
+May 22, 01:35 PM
+PR #13
+Release checkout validation re
+error
+1 events
+no incident
+no signal
+20
+/100
+PR #3
+Release checkout telemetry demo-20260514-041031
+@RajdeepKushwaha5
+May 13, 10:40 PM
+PR #3
+Release checkout telemetry dem
+error
+1 events
+no incident
+no signal
++4 more chains · Full investigation →
+No active incidents linked
+No Slack signal
+Full investigation
+Human-gated remediation
+Incident Autopilot
+
+Detect chains, score evidence, draft Slack, Linear, and GitHub actions, then wait for approval.
+Launch Autopilot
+
+Live Monitor
+GitHub x Sentry join
+
+SQL Sandbox
+Run a federated query
+Readiness
+7/7
+low burnout risk
+8
+Incident chains
+4-source JOIN · 30d
+7/7
+Sources online
+Coral providers
+23
+PRs analyzed
+GitHub · 30d
+19810m
+Avg MTTR
+PagerDuty
+7/7 online
+GitHub
+362t
+Sentry
+12t
+PagerDuty
+112t
+Linear
+8t
+Slack
+2t
+CircleCI
+2t
+Langfuse
+2t
+
+PR Review Agent
+Review any PR with live incident context
+Paste a URL — agent joins GitHub, Sentry, PagerDuty & Linear in one Coral query and posts an evidence-backed review directly to the PR.
+GitHub × Sentry × PD × Linear
+
+Root Cause
+Trace the full incident causality chain
+GitHub PR → Sentry error → PagerDuty incident → Slack war-room, all joined in one DataFusion execution plan with SQL proof attached.
+4-source JOIN · evidence_score
+
+Ask Helm
+Ask any engineering question in plain English
+Natural language resolves to optimized Coral SQL across all live sources. No API loops, no hallucinated rows — every answer carries a SQL proof.
+NL → Coral SQL → proof
+
+Handover Brief
+Generate a developer knowledge handover in seconds
+Enter a GitHub username — Helm queries PR history, open Linear tickets, and Sentry error ownership, then synthesises a complete markdown brief.
+GitHub × Linear × Sentry · 3-source
+
+CI Health
+PRs that passed CI but still broke production
+The only insight that requires three live APIs at once: GitHub merge history, CircleCI pipeline coverage, and Sentry error first_seen — joined on commit SHA in one Coral SQL plan.
+GitHub × CircleCI × Sentry · 3-source
+Why Coral beats standard MCP tool loops
+Benchmark: April 2026, n=51 complex tasks, Claude Opus 4.6
+Traditional MCP tool loop
+API calls
+14 sequential
+Token cost
+313k tokens
+Latency
+99s median
+Join logic
+Python-side stitching
+Pagination
+Client-side loops per source
+GET /repos/../pulls → GET /issues (N pages) → GET /incidents (N pages) → GET /conversations.history + 8 follow-up calls for pagination
+Coral federated SQL
+API calls
+1 SQL query
+Token cost
+112k tokens
+-64%
+Latency
+21s median
+-79%
+Join logic
+Apache DataFusion (Rust)
+Pagination
+Pushed to Coral runtime
+1 SQL query executes across GitHub × Sentry × PagerDuty × Slack in one DataFusion plan — aggregation, filtering, and joins resolved locally
++31%
+accuracy on complex multi-source tasks
+·
+-70%
+token cost
+·
+-55%
+latency
+vs direct provider MCP servers
+AI coding acceleration is outpacing incident response
+Your team ships faster with AI assist — and breaks more. The signal is in the data.
++242.7%
+incidents per PR
+since AI coding adoption
+4×
+faster merge velocity
+same team, more risk
+1 SQL
+Coral query traces
+every PR to every incident
+HELM traces every merged PR to downstream Sentry errors and PagerDuty incidents via Coral SQL — no manual correlation, no guesswork.
+View Risk Scorecard
+Review Debt Alert
+
+Unreviewed or self-merged PRs that triggered Sentry errors · GitHub × Sentry
+Open PRs stalled
+Scorecard
+0
+PRs with review debt
+0
+self-merged to production
+0
+merged with 0 reviews
+0
+Sentry events attributed
+
+
+Federated incident causality
+
+Zero-ETL Live Monitor
+Resolve which PR broke production by joining GitHub and Sentry through Coral SQL. No ETL, no warehouse, no copied JSON.
+Ask Helm
+Investigate Signal
+Workflow: PR → Error Correlation
+[GitHub × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Live Monitor
+github.pulls
+×
+sentry.issues
+Updated 4:27:09 PM
+
+Refresh
+incident_join.sql
+ok
+1 rows
+5838ms
+WITH recent_pulls AS (
+  SELECT
+    pr_number,
+    pr_title,
+    author,
+    merged_at
+  FROM github.pulls
+  WHERE merged_at >= NOW() - INTERVAL '7 days'
+),
+recent_errors AS (
+  SELECT
+    title,
+    project,
+    level,
+    times_seen,
+    first_seen
+  FROM sentry.issues
+  WHERE first_seen >= NOW() - INTERVAL '7 days'
+)
+SELECT
+  p.pr_number,
+  p.pr_title,
+  e.title      AS error_title,
+  e.times_seen,
+  e.level,
+  e.first_seen
+FROM recent_pulls p
+JOIN recent_errors e
+  ON e.first_seen BETWEEN p.merged_at
+     AND p.merged_at + INTERVAL '2 hours'
+ORDER BY e.times_seen DESC
+GitHub
+2026-05-22 21:17:19
+Release checkout validation regression release-20260523-024714
+
+PR #18
+@RajdeepKushwaha5
+Open
+0m
+Sentry
+2026-05-22 21:17:25
+Error: Live checkout regression release-20260523-024714
+
+nimbus-checkout-api
+error
+1 events
+Event trace
+PR #18 merged
+
+Release checkout validation regression release-20260523-024714
+2026-05-22 21:17:19
+Coral SQL JOIN executed
+
+github.pulls JOIN sentry.issues — 1 rows · 5838ms
+5838ms
+nimbus-checkout-api
+
+Error: Live checkout regression release-20260523-024714
+2026-05-22 21:17:25
+Query evidence
+ok
+status
+1
+rows matched
+5838ms
+runtime
+1
+Sentry events
+PR #18
+Repository
+Coral SQL proof — github.pulls JOIN sentry.issues
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Live evidence: PR to production error JOIN
+
+github
+sentry
+cross-source
+ok · 1 rows · 5838ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+1
+
+rows returned
+
+11
+
+columns visible
+
+5838ms
+
+runtime
+
+pr number	pr title	error title	level	author
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+
+
+Four-source causal graph
+
+Causality Constellation
+Join GitHub, Sentry, PagerDuty, and Slack in one Coral SQL execution plan with proof attached.
+Ask Helm
+Investigate Signal
+Join sources
+4
+
+Query shape
+PR → error → PagerDuty → Slack
+
+Output
+Evidence score
+
+Workflow: GitHub → Sentry → PagerDuty → Slack
+[GitHub × Sentry × PagerDuty × Slack]
+—
+4 live APIs
+1 SQL plan
+Impossible without Coral
+Root Cause Analysis
+9 chains
+4-source JOIN
+20
+score
+PR #18Release checkout validation regression release-20260523-024714
+1 Sentry issue
+1 events
+nimbus-checkout-api
+20
+score
+PR #17Release checkout validation regression release-20260523-023957
+1 Sentry issue
+1 events
+nimbus-checkout-api
+20
+score
+PR #16Release checkout validation regression release-20260523-021933
+1 Sentry issue
+1 events
+nimbus-checkout-api
+20
+score
+PR #13Release checkout validation regression release-20260522-190518
+1 Sentry issue
+1 events
+nimbus-checkout-api
+20
+score
+PR #9Release checkout validation regression demo-20260522-181604
+1 Sentry issue
+1 events
+nimbus-checkout-api
+20
+score
+PR #8Release checkout validation regression demo-20260522-173641
+1 Sentry issue
+1 events
+nimbus-checkout-api
+Evidence Confidence by PR Chain
+
+PR #18
+PR #17
+PR #16
+PR #13
+PR #9
+PR #8
+PR #3
+PR #2
+0
+5
+10
+15
+20
+
+Causality SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Root cause constellation
+
+github
+sentry
+pagerduty
+slack
+cross-source
+ok · 9 rows · 13603ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+JOIN
+pagerduty
+JOIN
+slack
+9
+
+rows returned
+
+17
+
+columns visible
+
+13603ms
+
+runtime
+
+pr number	pr title	error title	level	author
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+17	Release checkout validation regression release-20260523-023957	Error: Live checkout regression release-20260523-023957	error	RajdeepKushwaha5
+16	Release checkout validation regression release-20260523-021933	Error: Live checkout regression release-20260523-021933	error	RajdeepKushwaha5
+13	Release checkout validation regression release-20260522-190518	Error: Live checkout regression release-20260522-190518	error	RajdeepKushwaha5
+9	Release checkout validation regression demo-20260522-181604	Error: Live checkout regression demo-20260522-181604	error	RajdeepKushwaha5
+
+
+onversational analyst
+
+Ask Helm
+Ask natural language questions that resolve through optimized Coral SQL instead of direct API tool loops.
+Ask Helm
+Investigate Signal
+Workflow: NL → Coral SQL → Proof
+[GitHub × Sentry × PagerDuty × Linear × Slack]
+—
+5 live APIs
+1 SQL plan
+Impossible without Coral
+Live analyst
+
+Every response calls the backend and attaches Coral proof when available.
+Live API
+Draft-only actions
+Gemini reasoning
+Memory ready
+Prove which PR caused the latest production error.
+What changed right before checkout started failing?
+Which service is one deploy away from an incident?
+Who should review the risky fix before we merge?
+What should we rollback, fix, or watch next?
+Show the GitHub to Sentry evidence chain.
+Helm analyst
+04:27 PM
+I'm connected to your live Coral sources. Ask about burnout, releases, services, incidents, or delivery risk and I'll answer with fresh SQL proof.
+
+Ask Helm about incidents, releases, services, or team risk...
+Langfuse × Linear × Sentry — AI spend attribution
+
+Token ROI Score
+Every dollar your team spends on AI tokens — attributed to a shipped feature, an open ticket, or flagged as waste. Detects loop waste, orphan spend, and model mismatches. Impossible without Coral.
+Ask Helm
+Investigate Signal
+Workflow: Langfuse × Linear × Sentry — AI spend attribution
+[Langfuse × Linear × Sentry]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+Langfuse × Linear × Sentry — AI spend attribution
+Token ROI Score
+Every dollar your team spends on AI tokens — attributed to a shipped feature, an open ticket, or flagged as waste. Powered by Coral.
+
+Refresh
+AxiosError: Request failed with status code 500
+0
+/100
+🔴 Critical
+Token ROI Score
+Attribution
+/40
+Orphan penalty
+/30
+Loop efficiency
+/20
+Model match
+/10
+—
+7-day AI spend
+$0.00
+Detected waste
+$0.00
+Weekly saving potential
+0
+Tokens burned (7d)
+Attribution
+Loop Waste
+2
+Model Mismatch
+Orphan Spend
+1
+AI Operation	Team	Cost (7d)	Tokens	Traces	Linked Feature	Status	Owner	Errors
+No attribution data — add Langfuse traces with metadata.linearId
+Hide Coral SQL proofs (4)
+Token ROI — Coral SQL proofs
+3/4 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Langfuse × Linear × Sentry: AI cost attribution
+
+langfuse
+linear
+sentry
+cross-source
+error · 0 rows · 936ms
+Visual output
+SQL query
+Error: No column named `li.state` Detail: No column `li.state` is in scope. Valid columns include: t.id, t.name, t.timestamp, t.user_id, t.session_id, t.release, t.latency, t.usage__input, t.usage__output, t.usage__total. Hint: Did you mean `s.status`?
+
+langfuse
+JOIN
+linear
+JOIN
+sentry
+0
+
+rows returned
+
+0
+
+columns visible
+
+936ms
+
+runtime
+
+Query completed with no rows. The visual still proves source path, status, row count, and runtime.
+Langfuse: loop waste detector
+
+langfuse
+ok · 2 rows · 6443ms
+Langfuse: model mismatch detector
+
+langfuse
+ok · 0 rows · 5288ms
+Langfuse × Linear: orphan spend detector
+
+langfuse
+linear
+cross-source
+ok · 1 rows · 3740ms
+
+Adzuna × HackerNews × GitHub — public-signal prospecting
+
+Lighthouse — GTM Prospecting
+Finds companies that would want Coral by joining who is hiring data engineers, who is publicly complaining about pipeline pain, and who is actively building — in one Coral SQL plan. Then it writes the outreach. Impossible without Coral.
+Ask Helm
+Investigate Signal
+Workflow: Adzuna × HackerNews × GitHub — prospect scoring + outreach
+[Adzuna × HackerNews × GitHub]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+Adzuna × HackerNews × GitHub — public-signal prospecting
+Lighthouse
+Finds companies that would want Coral by joining who is hiring data engineers, who is publicly complaining about pipeline pain, and who is actively building — in one Coral SQL plan. Then it writes the outreach.
+
+Refresh
+5
+Prospects found
+5
+Hot leads
+85
+Avg ICP score
+3
+Live sources joined
+Adzuna × HackerNews × GitHub
+—
+3 public APIs · 1 SQL plan · local-first prospect list
+Impossible without Coral
+Notion
+US
+Hot lead · 95
+7 open data roles
+Senior Data Engineer · Analytics Engineer
+adzuna
+536 pts public pain
+Notion API â€“ public beta
+hackernews · LIVE
+TypeScript org
+20 public repos
+github
+Hiring
+35/40
+Pain
+35/35
+Build
+25/25
+Notion, with 7 data/AI roles open and your API active, ETL pipeline work must be a bottleneck. Coral lets your engineers join across all live data sources via SQL directly.
+4-source causal chain visual
+
+Incident Constellation
+Visual node graph of GitHub PR → Sentry error → PagerDuty incident → Slack response. Each edge is a SQL JOIN condition. Self-healing draft actions included.
+Ask Helm
+Investigate Signal
+Workflow: Incident Causality Graph
+[GitHub × Sentry × PagerDuty × Slack]
+—
+4 live APIs
+1 SQL plan
+Impossible without Coral
+Github × Sentry × Pagerduty × Slack
+4-source DataFusion JOIN: github.pulls x sentry.issues x pagerduty.incidents x slack.messages in one execution plan
+
+8 chains
+0 with incidents
+Refresh
+One SQL plan
+
+All 4 sources in a single DataFusion execution — not 4 API calls
+Zero ETL
+
+No Fivetran, no Snowflake, no dbt. Live APIs, live data.
+Proof attached
+
+Every edge is a SQL JOIN condition visible in the proof panel
+Causal Chains
+Each chain is one Coral cross-source JOIN result · sorted by evidence score
+Chain 1
+20
+evidence
+Highest Evidence
+GitHub
+PR #9
+
+Release checkout validation regression demo-20260522-181604
+2026-05-22 12:46
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression demo-20260522-181604
+
+nimbus-checkout-api · 1 events
+2026-05-22 12:46
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 2
+20
+evidence
+GitHub
+PR #18
+
+Release checkout validation regression release-20260523-024714
+2026-05-22 21:17
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression release-20260523-024714
+
+nimbus-checkout-api · 1 events
+2026-05-22 21:17
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 3
+20
+evidence
+GitHub
+PR #13
+
+Release checkout validation regression release-20260522-190518
+2026-05-22 13:35
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression release-20260522-190518
+
+nimbus-checkout-api · 1 events
+2026-05-22 13:35
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 4
+20
+evidence
+GitHub
+PR #3
+
+Release checkout telemetry demo-20260514-041031
+2026-05-13 22:40
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression demo-20260514-041031
+
+nimbus-checkout-api · 1 events
+2026-05-13 22:40
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 5
+20
+evidence
+GitHub
+PR #2
+
+Release checkout telemetry demo-20260514-040653
+2026-05-13 22:36
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression demo-20260514-040653
+
+nimbus-checkout-api · 1 events
+2026-05-13 22:37
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 6
+20
+evidence
+GitHub
+PR #16
+
+Release checkout validation regression release-20260523-021933
+2026-05-22 20:49
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression release-20260523-021933
+
+nimbus-checkout-api · 1 events
+2026-05-22 20:49
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 7
+20
+evidence
+GitHub
+PR #1
+
+Improve checkout quote validation
+2026-05-13 22:05
+JOIN ON first_seen ≤ merged_at + 24h
+2 min
+▶
+Sentry · error
+TypeError: Cannot read properties of null (reading 'items')
+
+nimbus-checkout-api · 1 events
+2026-05-13 22:07
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+Chain 8
+20
+evidence
+GitHub
+PR #17
+
+Release checkout validation regression release-20260523-023957
+2026-05-22 21:10
+JOIN ON first_seen ≤ merged_at + 24h
+0 min
+▶
+Sentry · error
+Error: Live checkout regression release-20260523-023957
+
+nimbus-checkout-api · 1 events
+2026-05-22 21:10
+LEFT JOIN ON service ILIKE + 72h window
+▶
+PagerDuty
+No incident linked
+
+LEFT JOIN returned null
+LEFT JOIN ON ts within 4h + incident keywords
+▶
+Slack
+No response detected
+
+No Slack channel configured or no messages
+by RajdeepKushwaha5
+nimbus-checkout-api
+3 draft remediation actions ready
+
+Open Self-Heal Workflow to review, approve, and copy draft Slack / Linear / GitHub actions
+Constellation SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Incident constellation graph
+
+github
+sentry
+pagerduty
+slack
+cross-source
+ok · 8 rows · 13661ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+JOIN
+pagerduty
+JOIN
+slack
+8
+
+rows returned
+
+18
+
+columns visible
+
+13661ms
+
+runtime
+
+pr number	pr title	error title	author
+9	Release checkout validation regression demo-20260522-181604	Error: Live checkout regression demo-20260522-181604	RajdeepKushwaha5
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	RajdeepKushwaha5
+13	Release checkout validation regression release-20260522-190518	Error: Live checkout regression release-20260522-190518	RajdeepKushwaha5
+3	Release checkout telemetry demo-20260514-041031	Error: Live checkout regression demo-20260514-041031	RajdeepKushwaha5
+2	Release checkout telemetry demo-20260514-040653	Error: Live checkout regression demo-20260514-040653	RajdeepKushwaha5
+
+3-source converging signal detector
+
+Cascade Early Warning
+Detects GitHub → Sentry → PagerDuty cascade chains: 24h deploy→error window, 4h error→incident window — 3-source Coral JOIN, predictive not reactive.
+Ask Helm
+Investigate Signal
+Workflow: Cascade Early Warning
+[GitHub × Sentry × PagerDuty]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+Cascade Early Warning
+
+GitHub → Sentry → PagerDuty · 24h deploy→error, 4h error→incident · 3-source Coral JOIN · predictive, not reactive
+0
+/ 100
+MONITORING
+
+0 chains
+0 services
+0 users affected
+No cascade pattern detected. GitHub, Sentry, and PagerDuty signals are not converging.
+
+Cascade detection SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Cascade Early Warning: GitHub × Sentry × PagerDuty 24h/4h window
+
+github
+sentry
+pagerduty
+cross-source
+ok · 0 rows · 6092ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+JOIN
+pagerduty
+0
+
+rows returned
+
+0
+
+columns visible
+
+6092ms
+
+runtime
+
+Query completed with no rows. The visual still proves source path, status, row count, and runtime.
+
+
+Causal time-to-error by author
+
+MTTR Attribution
+Per-author and per-service mean time to production error — computed live via a Coral GitHub × Sentry GROUP BY JOIN. No data team required.
+Ask Helm
+Investigate Signal
+Workflow: MTTR Attribution
+[GitHub × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+MTTR Causal Attribution
+
+Per-author mean time to production error — live Coral GitHub × Sentry JOIN · no data team required
+0m
+avg MTTR across all authors
+1
+authors with production errors
+9
+PR → error chains (30d)
+RajdeepKushwaha5 has the fastest path to production errors.
+
+Author Attribution Ranking
+
+Lowest MTTR = fastest error onset = highest deployment risk
+RA
+RajdeepKushwaha5
+
+9 PRs · 9 errors · nimbus-checkout-api
+0m
+high
+Service Breakdown
+
+Which services break fastest after a deployment
+nimbus-checkout-api
+
+0m
+9 errors · 1 author
+MTTR Attribution SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+MTTR Attribution: GitHub × Sentry causal attribution
+
+github
+sentry
+cross-source
+ok · 9 rows · 5133ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+9
+
+rows returned
+
+12
+
+columns visible
+
+5133ms
+
+runtime
+
+pr number	pr title	error title	level	author
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+17	Release checkout validation regression release-20260523-023957	Error: Live checkout regression release-20260523-023957	error	RajdeepKushwaha5
+16	Release checkout validation regression release-20260523-021933	Error: Live checkout regression release-20260523-021933	error	RajdeepKushwaha5
+13	Release checkout validation regression release-20260522-190518	Error: Live checkout regression release-20260522-190518	error	RajdeepKushwaha5
+9	Release checkout validation regression demo-20260522-181604	Error: Live checkout regression demo-20260522-181604	error	RajdeepKushwaha5
+
+
+Deployments to errors
+
+Release Impact
+Find which merged PR windows line up with first-seen production errors.
+Ask Helm
+Investigate Signal
+Window
+30 days
+
+Join path
+GitHub + Sentry
+
+Safety
+Read only
+
+[GitHub × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Deployment Watch
+
+Causal matches only · each Sentry issue is assigned to its nearest preceding merged PR
+PR #18: Release checkout validation regression release-20260523-024714
+
+1 matched Sentry issue · 1 total events
+2026-05-22
+PR #17: Release checkout validation regression release-20260523-023957
+
+1 matched Sentry issue · 1 total events
+2026-05-22
+PR #16: Release checkout validation regression release-20260523-021933
+
+1 matched Sentry issue · 1 total events
+2026-05-22
+PR #13: Release checkout validation regression release-20260522-190518
+
+1 matched Sentry issue · 1 total events
+2026-05-22
+PR Merges vs Production Errors (14d)
+
+2026-05-13
+2026-05-22
+0
+2
+4
+6
+8
+Sentry eventsPRs merged
+
+Deployment proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Deployment errors
+
+github
+sentry
+cross-source
+ok · 9 rows · 5840ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+9
+
+rows returned
+
+11
+
+columns visible
+
+5840ms
+
+runtime
+
+pr number	pr title	error title	level	author
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+17	Release checkout validation regression release-20260523-023957	Error: Live checkout regression release-20260523-023957	error	RajdeepKushwaha5
+16	Release checkout validation regression release-20260523-021933	Error: Live checkout regression release-20260523-021933	error	RajdeepKushwaha5
+13	Release checkout validation regression release-20260522-190518	Error: Live checkout regression release-20260522-190518	error	RajdeepKushwaha5
+9	Release checkout validation regression demo-20260522-181604	Error: Live checkout regression demo-20260522-181604	error	RajdeepKushwaha5
+
+
+
+Search incidents, releases, services
+K
+9
+SQL queries
+7
+cross-source
+~118x MCP saved
+
+
+RJ
+Rajdeep
+
+Release Attribution
+Sentry releases × GitHub PRs
+
+Release Attribution
+Sentry release versions joined to GitHub PR merges by timestamp — which PR shipped in which release and how many new errors that release introduced.
+Ask Helm
+Investigate Signal
+Workflow: Release Error Attribution
+[Sentry × GitHub]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Sentry × GitHub
+Sentry release versions joined to GitHub PR merges by timestamp — shows which PR deployment maps to which release, with error count per release.
+
+Refresh
+0
+releases tracked
+0
+new errors introduced
+0
+releases matched to PRs
+Sentry — release versions with new error group counts
+GitHub — PRs matched by SHA or merged within 6h before release
+Why release attribution requires Coral
+
+Sentry tracks releases and new error counts. GitHub tracks merged PRs. Neither knows about the other. Coral joins sentry.releases to github.pulls by timestamp — showing which PR shipped in which release and how many new errors that release introduced.
+No releases found in the last 60 days — or Sentry releases are not yet configured.
+
+Sentry × GitHub release attribution proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Release attribution: Sentry releases × GitHub PRs
+
+sentry
+github
+cross-source
+ok · 0 rows · 3531ms
+Visual output
+SQL query
+sentry
+JOIN
+github
+0
+
+rows returned
+
+0
+
+columns visible
+
+3531ms
+
+runtime
+
+Query completed with no rows. The visual still proves source path, status, row count, and runtime.
+
+Search incidents, releases, services
+K
+9
+SQL queries
+7
+cross-source
+~118x MCP saved
+
+
+RJ
+Rajdeep
+
+Deploy Trend
+GitHub × Sentry monthly aggregate
+
+Deploy vs Error Trend
+Monthly deploy cadence vs Sentry error introduction rate — two independent live time series joined in one DataFusion plan. Impossible without Coral.
+Ask Helm
+Investigate Signal
+Workflow: Deploy vs Error Trend
+[GitHub × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+GitHub × Sentry · Monthly Aggregate
+Deploy Frequency vs Error Introduction Rate
+One DataFusion plan joins two independent live time series: GitHub deploy cadence (PR merges per month) and Sentry error introduction rate, grouped by calendar month. Neither API exposes both series. Coral computes this in a single SQL round-trip.
+
+Refresh
+15
+
+deploys (6 months)
+9
+
+new Sentry errors
+0
+
+fatal errors
+0.6
+
+errors per deploy
+2026-05
+0
+4
+8
+12
+16
+0
+1
+2
+3
+4
+deploysnew errorsfatal errors
+
+Bars: deploy count and new error count per month (left axis). Line: fatal errors per month (right axis). NOT EXISTS causality filter ensures each error is attributed to its nearest preceding PR only.
+
+Month
+Deploys
+New errors
+Fatal
+Error / deploy
+Authors
+2026-05
+15
+9
+0
+0.6
+1
+Deploy trend SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Deploy vs error weekly (GitHub × Sentry)
+
+github
+sentry
+cross-source
+ok · 1 rows · 4264ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+1
+
+rows returned
+
+6
+
+columns visible
+
+4264ms
+
+runtime
+
+year month	deploys	new errors	total error events	fatal errors
+2026-05	15	9	51	0
+
+
+GitHub × Linear × Sentry burnout model
+
+Team Health Pulse
+Three live sources joined per engineer: GitHub PR timing, Linear ticket pressure, and Sentry error ownership. Burnout signals impossible without Coral.
+Ask Helm
+Investigate Signal
+Workflow: Burnout Risk Detection
+[GitHub × Linear × Sentry]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+GitHub × Linear × Sentry
+One DataFusion plan across GitHub × Linear × Sentry — PR timing, ticket pressure, and error ownership per engineer in a single Coral query.
+
+Refresh
+1
+engineers tracked
+0
+high burnout risk
+0
+medium risk
+3
+sources joined
+GitHub — PR timing (off-hours, late-night patterns)
+Linear — ticket pressure, overdue, high-priority
+Sentry — error ownership, PRs introducing bugs
+Linear ticket data is matched by display name vs GitHub handle (case-insensitive). If names differ across systems, ticket columns will show 0 — the Sentry and PR signals are unaffected.
+Why this insight doesn't exist anywhere else
+
+No single tool knows who worked until 2am and has 4 overdue P0 tickets and whose PRs keep introducing Sentry errors. Helm joins GitHub, Linear, and Sentry live in one Coral SQL plan — zero ETL, zero data warehouse, zero pipeline.
+Engineer Health Pulse
+Sorted by burnout score · Cross-source: GitHub × Linear × Sentry
+R
+RajdeepKushwaha5
+
+low risk
+29
+18 PRs
+4 late-night
+0 tickets
+14 error PRs
+Off-hours
+22% late-night
+4 late-night PRs (22% of activity, UTC timestamps — local timezone may differ)
+14 PRs introduced Sentry errors (78% error rate)
+Engineer Burnout Pressure
+
+0
+8
+16
+24
+32
+RajdeepKushwaha5
+
+Team Health Pulse SQL proofs
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Team Health Pulse (GitHub × Linear × Sentry)
+
+github
+linear
+sentry
+cross-source
+ok · 1 rows · 5716ms
+Visual output
+SQL query
+github
+JOIN
+linear
+JOIN
+sentry
+1
+
+rows returned
+
+12
+
+columns visible
+
+5716ms
+
+runtime
+
+author	total prs	late night prs	off hours prs	last pr date
+RajdeepKushwaha5	18	4	8	2026-05-22
+
+
+GitHub × Linear × Sentry burnout model
+
+Team Health Pulse
+Three live sources joined per engineer: GitHub PR timing, Linear ticket pressure, and Sentry error ownership. Burnout signals impossible without Coral.
+Ask Helm
+Investigate Signal
+Workflow: Burnout Risk Detection
+[GitHub × Linear × Sentry]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+GitHub × Linear × Sentry
+One DataFusion plan across GitHub × Linear × Sentry — PR timing, ticket pressure, and error ownership per engineer in a single Coral query.
+
+Refresh
+1
+engineers tracked
+0
+high burnout risk
+0
+medium risk
+3
+sources joined
+GitHub — PR timing (off-hours, late-night patterns)
+Linear — ticket pressure, overdue, high-priority
+Sentry — error ownership, PRs introducing bugs
+Linear ticket data is matched by display name vs GitHub handle (case-insensitive). If names differ across systems, ticket columns will show 0 — the Sentry and PR signals are unaffected.
+Why this insight doesn't exist anywhere else
+
+No single tool knows who worked until 2am and has 4 overdue P0 tickets and whose PRs keep introducing Sentry errors. Helm joins GitHub, Linear, and Sentry live in one Coral SQL plan — zero ETL, zero data warehouse, zero pipeline.
+Engineer Health Pulse
+Sorted by burnout score · Cross-source: GitHub × Linear × Sentry
+R
+RajdeepKushwaha5
+
+low risk
+29
+18 PRs
+4 late-night
+0 tickets
+14 error PRs
+Off-hours
+22% late-night
+4 late-night PRs (22% of activity, UTC timestamps — local timezone may differ)
+14 PRs introduced Sentry errors (78% error rate)
+Engineer Burnout Pressure
+
+0
+8
+16
+24
+32
+RajdeepKushwaha5
+
+Team Health Pulse SQL proofs
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Team Health Pulse (GitHub × Linear × Sentry)
+
+github
+linear
+sentry
+cross-source
+ok · 1 rows · 5716ms
+Visual output
+SQL query
+github
+JOIN
+linear
+JOIN
+sentry
+1
+
+rows returned
+
+12
+
+columns visible
+
+5716ms
+
+runtime
+
+author	total prs	late night prs	off hours prs	last pr date
+RajdeepKushwaha5	18	4	8	2026-05-22
+Linear × Sentry team pressure
+
+Ticket vs Error Load
+Linear ticket load joined to Sentry error volume per team — shows which teams are overloaded with P0 tickets and production errors simultaneously.
+Ask Helm
+Investigate Signal
+Workflow: Ticket Pressure Overlay
+[Linear × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Linear × Sentry
+Linear ticket pressure joined to Sentry error volume per team — one Coral SQL plan, two live sources, zero ETL.
+
+Refresh
+0
+teams analyzed
+0
+high pressure teams
+0
+open tickets total
+0
+linked Sentry errors
+Linear — open tickets, P0/P1 count, overdue work
+Sentry — errors correlated to team by project name match
+Why this view doesn't exist in Linear or Sentry alone
+
+Linear sees tickets. Sentry sees errors. Neither knows about the other. Coral joins them by team key in one SQL plan — showing which teams are both overloaded with P0 tickets and generating the most production errors simultaneously.
+No teams found — or Linear/Sentry sources need connecting. The query looks for Linear team keys of 4+ characters that match Sentry project names.
+
+Linear × Sentry team JOIN proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Ticket vs errors: Linear × Sentry per team
+
+linear
+sentry
+cross-source
+ok · 0 rows · 8574ms
+Visual output
+SQL query
+linear
+JOIN
+sentry
+0
+
+rows returned
+
+0
+
+columns visible
+
+8574ms
+
+runtime
+
+Query completed with no rows. The visual still proves source path, status, row count, and runtime.
+
+
+Production stability
+
+Service Health
+Track unstable services by joining Sentry issue volume with PagerDuty incident signals.
+Ask Helm
+Investigate Signal
+Services unstable
+0
+
+Connected sources
+7/7
+
+Signal source
+Sentry + PD
+
+[Sentry × PagerDuty]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Service Stability
+
+Sentry issues joined to PagerDuty incidents
+No service instability detected
+
+Sentry authenticated, but no issue rows are visible yet.
+Service proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Service instability
+
+sentry
+pagerduty
+cross-source
+ok · 0 rows · 3861ms
+Visual output
+SQL query
+sentry
+JOIN
+pagerduty
+0
+
+rows returned
+
+0
+
+columns visible
+
+3861ms
+
+runtime
+
+Query completed with no rows. The visual still proves source path, status, row count, and runtime.
+
+
+GitHub × CircleCI × Sentry — 3-source CI correlation
+
+CircleCI × GitHub × Sentry
+PRs that passed CI but still introduced production errors. Joins GitHub merge history, CircleCI pipeline coverage, and Sentry error first_seen in one Coral SQL plan.
+Ask Helm
+Investigate Signal
+Workflow: GitHub × CircleCI × Sentry
+[GitHub × CircleCI × Sentry]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+GitHub × CircleCI × Sentry
+CI Health & Error Correlation
+Three live APIs joined in one Coral SQL plan: GitHub merge history, CircleCI pipeline coverage, and Sentry error first_seen. Surfaces PRs that passed CI but still introduced production errors — the gap no single tool can see.
+
+Refresh
+Could not load CircleCI data. Check that CIRCLECI_TOKEN and CIRCLECI_PROJECT_SLUG are set.
+
+Why this doesn't exist in CI dashboards
+
+CircleCI only knows pipeline pass/fail. Sentry only knows error time. GitHub only knows merge time. Helm joins all three in one Coral SQL plan — commit SHA bridges GitHub to CircleCI, merge timestamp bridges GitHub to Sentry. Zero ETL, zero pipeline.
+
+GitHub × Sentry — open PRs vs live errors
+
+Review Debt Aging
+Open PRs stalled in review while related Sentry errors are actively firing. The worst combination: fixes are ready but blocked in code review.
+Ask Helm
+Investigate Signal
+Workflow: Open PRs vs live Sentry errors
+[GitHub × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+GitHub × Sentry
+Review Debt Aging
+Open PRs stalled in review while related Sentry errors are actively firing. This is the worst possible state: code fixes are already written but stuck waiting for review while production breaks. GitHub open PRs joined to Sentry live errors by service name — one Coral SQL plan.
+
+Refresh
+5
+
+open PRs awaiting review
+0
+
+PRs with live errors
+0
+
+blocked error events
+0
+
+stalled 7+ days
+PR
+Author
+Age
+Review comments
+Live errors
+Error events
+Users hit
+#19 fix: null guard on payment processor response
+RajdeepKushwaha5
+2d
+null comments
+—
+0
+—
+#20 fix: clear cart on session expiry to prevent stale checkout
+RajdeepKushwaha5
+2d
+null comments
+—
+0
+—
+#21 fix: atomic inventory decrement to prevent overselling
+RajdeepKushwaha5
+2d
+null comments
+—
+0
+—
+#22 feat: exponential back-off retry for inventory service calls
+RajdeepKushwaha5
+2d
+null comments
+—
+0
+—
+#23 fix: reject expired JWTs before checkout proceeds
+RajdeepKushwaha5
+2d
+null comments
+—
+0
+—
+Why this can't be seen without Coral
+
+GitHub knows which PRs are open and for how long. Sentry knows which services are breaking. No single tool knows which open PRs are blocking fixes for actively broken services. Helm joins them live in one Coral SQL plan — zero warehouse, zero ETL.
+Review Debt Aging SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Review Debt Aging: open PRs vs live Sentry errors (GitHub × Sentry)
+
+github
+sentry
+cross-source
+ok · 5 rows · 4322ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+5
+
+rows returned
+
+11
+
+columns visible
+
+4322ms
+
+runtime
+
+pr number	pr title	author	created at	today
+19	fix: null guard on payment processor response	RajdeepKushwaha5	2026-05-27T22:13:48Z	2026-05-30
+20	fix: clear cart on session expiry to prevent stale checkout	RajdeepKushwaha5	2026-05-27T22:13:54Z	2026-05-30
+21	fix: atomic inventory decrement to prevent overselling	RajdeepKushwaha5	2026-05-27T22:13:59Z	2026-05-30
+22	feat: exponential back-off retry for inventory service calls	RajdeepKushwaha5	2026-05-27T22:14:05Z	2026-05-30
+23	fix: reject expired JWTs before checkout proceeds	RajdeepKushwaha5	2026-05-27T22:14:10Z	2026-05-30
+
+
+Linear × Slack — silent backlog noise
+
+Ticket Thread Tracker
+High-priority Linear tickets generating Slack thread chaos. Joins open tickets to channel messages by identifier mention — backlog pressure that spills into chat.
+Ask Helm
+Investigate Signal
+Workflow: Linear ticket × Slack thread
+[Linear × Slack]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Linear × Slack
+Ticket Thread Tracker
+High-priority Linear tickets generating Slack thread chaos. Joins open tickets to channel messages by ticket identifier mention (e.g. ENG-42 in message text). Reveals backlog pressure that spills into chat — silent tickets making loud noise.
+
+Refresh
+No high-priority tickets generating Slack noise in the last 14 days.
+
+Either backlog is quiet, or Slack channel has no matching ticket references.
+Why this insight doesn't exist in Linear or Slack alone
+
+Linear shows tickets. Slack shows conversations. Neither shows you which tickets are generating the most channel noise. Helm joins them in one Coral SQL plan — ticket identifier in message text is the cross-source key. Zero ETL, zero pipeline.
+Ticket Thread Tracker SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Linear × Slack Ticket Thread Tracker
+
+linear
+slack
+cross-source
+ok · 0 rows · 2470ms
+Visual output
+SQL query
+linear
+JOIN
+slack
+0
+
+rows returned
+
+0
+
+columns visible
+
+2470ms
+
+runtime
+
+Query completed with no rows. The visual still proves source path, status, row count, and runtime.
+
+Detect → Score → Draft → Approve
+
+Self-Healing Workflow
+Full remediation workflow: Coral SQL detects the incident chain, scores the evidence, pre-fills Slack/Linear/GitHub drafts, and waits for human approval before anything is sent.
+Ask Helm
+Investigate Signal
+Workflow: Detect → Score → Draft → Approve
+[GitHub × Sentry × PagerDuty × Linear]
+—
+4 live APIs
+1 SQL plan
+Impossible without Coral
+Self-Healing Workflow
+From production incident to remediation in one SQL-grounded workflow
+Helm runs a 4-source Coral SQL JOIN (GitHub x Sentry x PagerDuty x Linear) to detect the PR to error to incident chain, flags chains with no Linear follow-up, scores evidence 0-100, pre-fills remediation drafts, and holds every write behind human approval.
+
+Refresh evidence
+1
+Detect causal chain
+
+GitHub PR merge → Sentry error → PagerDuty incident detected via 4-source Coral SQL JOIN (NOT EXISTS causality filter, 7-day window)
+running
+2
+Score evidence
+
+Cross-source evidence scored 0-100: PagerDuty incident (+30) + fatal severity (+20) + user impact (+10) + missing Linear triage (+10)
+3
+Generate draft actions
+
+Helm pre-fills Linear remediation ticket, Slack status post, and GitHub rollback proposal from live Coral evidence
+4
+Human approval
+
+Nothing is sent or written without explicit approval. You review, approve, and copy to clipboard.
+Without Helm
+
+Manual Sentry → GitHub correlation (30+ min)
+Manual PagerDuty check
+Hand-write Slack message from memory
+Create Linear ticket manually
+VS
+With Helm + Coral
+
+1 SQL JOIN detects the full chain in seconds
+Evidence score computed automatically
+All 3 draft actions pre-filled from live data
+Human approves — nothing auto-fires
+No incident chains detected in the last 7 days.
+
+Draft actions will appear here when Coral detects a PR → error → incident → triage-gap chain.
+
+SOC2-ready compliance audit trail
+
+Engineering Risk Scorecard
+Every deployment, its errors, triggered incidents, Linear follow-ups, and Slack response noise — risk-scored from one Coral SQL plan. Zero warehouse, zero ETL.
+Ask Helm
+Investigate Signal
+Workflow: SOC2 Audit Trail
+[GitHub × Sentry × PagerDuty × Linear × Slack]
+—
+5 live APIs
+1 SQL plan
+Impossible without Coral
+Engineering Risk Scorecard
+
+5-source compliance audit · causal PR-to-error chains · SOC2-ready · zero ETL
+SOC2-ready evidence pack
+
+Copy or download the live audit trail with SQL proofs attached.
+Copy JSON
+Download
+CLEAN
+3
+
+changes audited
+30
+
+error chains
+0
+
+incidents triggered
+0
+
+high-risk chains
+Change
+Impact
+Compliance flags
+Score
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-13: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-9: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-15: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-11: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-18: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-17: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-14: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-19: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-12: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-16: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #18: Release checkout validation regression release-20260523-024714
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-10: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+PR #17: Release checkout validation regression release-20260523-023957
+
+RajdeepKushwaha5 · 2026-05-22
+error: 1 events
+
+0 users · nimbus-checkout-api
+Linear RJD-10: Backlog
+LINEAR FOLLOW-UP
+RAPID ONSET
+REPEAT PATTERN
+40
+Risk Scorecard SQL proof
+1/1 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Risk Scorecard: Github × Sentry × Pagerduty × Linear × Slack compliance audit
+
+github
+sentry
+pagerduty
+linear
+slack
+cross-source
+ok · 30 rows · 7046ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+JOIN
+pagerduty
+JOIN
+linear
+JOIN
+slack
+30
+
+rows returned
+
+22
+
+columns visible
+
+7046ms
+
+runtime
+
+pr number	pr title	error title	level	author
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+18	Release checkout validation regression release-20260523-024714	Error: Live checkout regression release-20260523-024714	error	RajdeepKushwaha5
+Human-gated actions
+
+Approval Queue
+Review suggested Slack, Linear, and incident follow-up drafts before anything is copied or sent.
+Ask Helm
+Investigate Signal
+Write status
+Draft only
+
+Approval
+Required
+
+Audit
+Visible
+
+[GitHub × Sentry]
+—
+2 live APIs
+1 SQL plan
+Impossible without Coral
+Approval Center
+
+Drafted actions remain gated by human review
+Approval queue unavailable
+
+The actions endpoint could not return draft recommendations.
+
+GitHub × Linear × Sentry — knowledge transfer
+
+Developer Handover Brief
+Enter a GitHub username and get a complete developer knowledge handover in seconds: PR history, open tickets, live error ownership, and an AI-synthesised brief.
+Ask Helm
+Investigate Signal
+Workflow: Developer Knowledge Transfer
+[GitHub × Linear × Sentry]
+—
+3 live APIs
+1 SQL plan
+Impossible without Coral
+Developer Handover Brief
+
+Enter a GitHub username — Helm queries Coral across GitHub × Linear × Sentry and generates a structured knowledge handover in seconds.
+github
+linear
+sentry
+3-source JOIN
+@
+github-username
+Generate Brief
+GitHub PR history (6 months)
+→
+Open Linear tickets
+→
+Sentry error ownership
+→
+AI handover brief
+3 live Coral SQL queries across GitHub, Linear, and Sentry — synthesised by Gemini into a structured markdown brief. No manual data collection.
+
+Product architecture
+
+How Helm Works
+See how Helm connects live sources, Coral SQL, evidence scoring, AI synthesis, and approval-gated remediation.
+Ask Helm
+Investigate Signal
+Product architecture
+
+How Helm Works
+Helm turns live operational systems into source-native SQL evidence, scores the signal, explains it with AI, and keeps every remediation action approval-gated.
+Coral SQL control plane
+Live operational sources
+
+GitHub
+
+pulls · commits · reviews
+Sentry
+
+issues · events · releases
+PagerDuty
+
+incidents · response time
+Linear
+
+issues · owners · follow-ups
+Slack
+
+messages · incident chatter
+CircleCI
+
+pipelines · workflow metrics
+Source tables
+Federated query layer
+
+Coral SQL
+
+One read-only plan across live SaaS APIs
+github.pulls g
+JOIN sentry.issues s
+LEFT JOIN circleci.pipelines c
+  ON c.vcs_revision = g.head__sha
+LEFT JOIN pagerduty.incidents p
+LEFT JOIN slack.messages(channel => ...) sl
+No ETL · no copied warehouse · live proofs
+Evidence rows
+Evidence intelligence
+
+PR → error causality
+MTTR attribution
+CI coverage gap
+Burnout risk
+Workload pressure
+Compliance flags
+Helm reasoning layer
+
+Scores risk, ranks impact, and asks Gemini to synthesize only after SQL proof exists.
+Actions
+Product workflows
+
+Live Monitor
+
+Root Cause
+
+Risk Scorecard
+
+Self-Healing
+
+PR Review Agent
+
+SQL Sandbox
+
+Ask Helm
+
+Read-safe by default
+
+Helm queries providers through Coral. Writes are generated as drafts until a human approves them.
+Approval queue
+
+Repair PRs, Slack updates, Linear follow-ups, and incident notes remain reviewable before execution.
+Auditable output
+
+Every answer can show source list, SQL text, row count, runtime, and proof status.
+Live joins over operational systems
+Human approval before provider writes
+SQL proof attached to every critical claim
+Compared with direct API tool loops:
++31% accuracy
+-70% token cost
+-55% latency
+Architecture decision
+Why Coral instead of MCP tool loops?
++31% accuracy · -70% cost · -55% latency
+Scenario	Without Coral (MCP loops)	With Coral SQL
+Cross-source query	29 sequential tool calls	1 SQL query (DataFusion)
+Execution time	~230s — often times out	~21s end-to-end
+Answer accuracy	Baseline (hallucinated joins)	+31% higher (verified rows)
+Token cost	29× tool-call overhead	-70% vs direct MCP
+GitHub × Sentry JOIN	Manual Python stitching	Native SQL · 1 execution plan
+4-source JOIN	Not feasible (context overflow)	GitHub × Sentry × PD × Slack · done
+Audit trail	No — black-box tool calls	Full SQL proof · row count · runtime
+Source: Coral benchmark — complex cross-source tasks, n=50 queries. Helm uses Coral as the sole data layer; every table in this UI is backed by a verifiable SQL proof.
+DESCRIBE EXTENDED github.pulls
+Coral adaptive metadata
+column_name	data_type	is_nullable
+_links	Utf8	YES
+_links__comments	Utf8	YES
+_links__comments__href	Utf8	YES
+_links__commits	Utf8	YES
+_links__commits__href	Utf8	YES
+_links__html	Utf8	YES
+_links__html__href	Utf8	YES
+_links__issue	Utf8	YES
+_links__issue__href	Utf8	YES
+_links__review_comment	Utf8	YES
+Source-native by design
+
+Helm asks Coral for live rows from GitHub, Sentry, PagerDuty, Linear, and Slack. The product does not need a warehouse just to answer operational questions.
+Evidence before synthesis
+
+AI explanations are grounded in SQL proof: source list, query text, runtime, and returned rows are visible to the operator.
+Approval-gated remediation
+
+Repair PRs and outbound updates are treated as controlled actions, not invisible autonomous writes.
+
+Live Coral query terminal
+
+SQL Sandbox
+Run any SELECT query across live GitHub, Sentry, PagerDuty, Linear, and Slack sources. Type it, run it, watch Coral join them in one federated plan.
+Ask Helm
+Investigate Signal
+Coral SQL Sandbox
+
+Run any read-only SELECT query across live sources. Coral joins them in a single federated plan.
+Live Coral engine
+Templates:
+GitHub PRs
+Sentry Errors
+PR → Error JOIN
+cross-source
+Service Stability
+cross-source
+Schema Depth
+cross-source
+Deploy vs Error Trend
+cross-source
+4-Source Constellation
+cross-source
+DESCRIBE EXTENDED
+Slack Channels
+Linear ↔ GitHub (Exact)
+cross-source
+PagerDuty Forensics
+On-Call Attribution
+Sentry Discover
+Linear Sprints
+SOC 2: Self-Mergers
+Review Debt
+cross-source
+-- Write a Coral SQL query or pick a template above
+SELECT g.number, g.title, s.title AS error_title
+FROM github.pulls g
+JOIN sentry.issues s
+  ON g.merged_at <= s.first_seen
+LIMIT 20
+Enabled sources
+github
+sentry
+pagerduty
+linear
+slack
+SQL decides which enabled sources are used
+Ctrl+Enter
+Run Query
+Pick a template or write your own query
+
+Any SELECT across GitHub, Sentry, PagerDuty, Linear, or Slack — Coral joins live sources without ETL, pipelines, or a data warehouse.
+
+
+Helm
+
+Live
+Coral Ops Intelligence
+
+Mission Control
+
+Live Monitor
+
+Root Cause
+
+Ask Helm
+
+Token ROI
+
+Lighthouse
+Incident Chain
+
+
+Constellation
+
+Cascade Warning
+Attribution
+
+
+MTTR Attribution
+
+Release Impact
+
+Release Attribution
+
+Deploy Trend
+Team
+
+
+Team Health
+
+Workload Risk
+
+Ticket Pressure
+
+Service Health
+CI & Review
+
+
+CI Health
+
+Review Debt Aging
+
+Ticket Thread Tracker
+Agents & Actions
+
+
+PR Review Agent
+
+Self-Heal
+
+Risk Scorecard
+
+Approval Queue
+
+Handover Brief
+Workspace
+
+
+How Helm Works
+
+SQL Sandbox
+
+Source setup
+
+SQL proofs
+8 live sources · 1 SQL layer
+
+GitHub · Sentry · PagerDuty · Linear · Slack · Adzuna · HackerNews · Langfuse — joined by Coral, no ETL.
+Search incidents, releases, services
+K
+12
+SQL queries
+10
+cross-source
+~148x MCP saved
+
+
+RJ
+Rajdeep
+
+Source setup
+Workspace readiness
+
+Source Setup
+Inspect installed Coral providers, required inputs, table coverage, and source metadata before operating Helm.
+Ask Helm
+Investigate Signal
+Sources ready
+7/7
+
+Metadata
+Live Coral
+
+Inputs
+Checked
+
+Coral Source Setup
+
+Installed providers, required inputs, and live table visibility from Coral.
+7/7
+
+sources healthy
+500
+
+tables visible
+18
+
+available to add
+Contract Readiness · coral.tables · coral.columns · coral.filters · coral.table_functions · coral.inputs
+4/5 sources ready
+GitHub
+
+✓ Ready
+✓ accepted_assignments
+✓ access
+✓ accounts
+✓ activity
+✓ activity_list_repos_starred_by_user
+✓ activity_list_repos_watched_by_user
+✓ advisories
+✓ alerts
+✓ analyses
+✓ annotations
+✓ app
+✓ app_hook_config
+✓ app_hook_deliveries
+✓ app_installations
+✓ approvals
+✓ apps
+✓ artifact_and_log_retention
+✓ assignees
+✓ assignments
+✓ attempts
+✓ attestations
+✓ authors
+✓ autofix
+✓ autolinks
+✓ automated_security_fixes
+✓ billing
+✓ blobs
+✓ blocked_by
+✓ blocking
+✓ branches_where_head
+✓ budgets
+✓ builds
+✓ caches
+✓ campaigns
+✓ check_runs
+✓ classroom_assignments
+✓ classrooms
+✓ clones
+✓ code_frequency
+✓ code_security_configuration
+✓ codes_of_conduct
+✓ codespaces
+✓ collaborators
+✓ comments
+✓ commit_activity
+✓ commits
+✓ config
+✓ configurations
+✓ conflicts
+✓ content_exclusion
+✓ contents
+✓ contexts
+✓ copilot
+✓ custom
+✓ databases
+✓ default_setup
+✓ defaults
+✓ deliveries
+✓ deployment_branch_policies
+✓ deployment_protection_rules
+✓ deployment_records
+✓ devcontainers
+✓ downloads
+✓ emails
+✓ emojis
+✓ enforce_admins
+✓ enterprise_1_day
+✓ enterprise_code_security_configuration_repositories
+✓ enterprise_copilot_metric_report_enterprise_28_day_latest
+✓ enterprise_team_memberships
+✓ enterprise_teams
+✓ environments
+✓ errors
+✓ events
+✓ exports
+✓ failed_invitations
+✓ feeds
+✓ fields
+✓ files
+✓ fork_pr_contributor_approval
+✓ fork_pr_workflows_private_repos
+✓ gist
+✓ gist_comments
+✓ gist_commits
+✓ gist_forks
+✓ gist_public
+✓ gist_starred
+✓ gists
+✓ github_owned
+✓ grades
+✓ health
+✓ history
+✓ hovercard
+✓ import
+✓ installation
+✓ installation_repositories
+✓ installation_requests
+✓ instances
+✓ interaction_limits
+✓ invitations
+✓ issue_field_values
+✓ issue_fields
+✓ issue_types
+✓ issues
+✓ issues_list_comments
+✓ issues_list_events
+✓ items
+✓ jobs
+✓ labels
+✓ languages
+✓ large_files
+✓ latest
+✓ license
+✓ licenses
+✓ limits
+✓ locations
+✓ machine_sizes
+✓ marketplace_listing_accounts
+✓ marketplace_listing_plans
+✓ marketplace_listing_stubbed_plans
+✓ marketplace_purchases
+✓ matching_refs
+✓ members
+✓ memberships
+✓ meta
+✓ meta_get_all_versions
+✓ metrics
+✓ milestones
+✓ network_configurations
+✓ network_settings
+✓ new
+✓ notification_thread_subscription
+✓ notifications
+✓ org_action_cache_usage
+✓ org_action_hosted_runner_image_custom_versions
+✓ org_action_hosted_runners
+✓ org_action_oidc_customization_sub
+✓ org_action_permission_repositories
+✓ org_action_permission_self_hosted_runner_repositories
+✓ org_action_permissions
+✓ org_action_runner_group_hosted_runners
+✓ org_action_runner_group_runners
+✓ org_action_secret_public_key
+✓ org_action_secrets
+✓ org_action_variables
+✓ org_attestation_repositories
+✓ org_attestations
+✓ org_blocks
+✓ org_code_scanning_alerts
+✓ org_codespace_secrets
+✓ org_copilot_coding_agent_permission_repositories
+✓ org_copilot_coding_agent_permissions
+✓ org_copilot_metric_report_organization_28_day_latest
+✓ org_dependabot_secret_public_key
+✓ org_dependabot_secrets
+✓ org_hooks
+✓ org_insight_summary_stat_users
+✓ org_insight_summary_stats
+✓ org_insight_time_stat_users
+✓ org_insight_time_stats
+✓ org_insights_summary_stat
+✓ org_insights_time_stat
+✓ org_installations
+✓ org_memberships
+✓ org_migrations
+✓ org_organization_role_teams
+✓ org_organization_role_users
+✓ org_private_registry_public_key
+✓ org_property_values
+✓ org_repos
+✓ org_secret_scanning_alerts
+✓ org_setting_immutable_release_repositories
+✓ org_setting_immutable_releases
+✓ organization_1_day
+✓ organization_roles
+✓ organization_secrets
+✓ organization_setting_billing_usage
+✓ organization_variables
+✓ organizations
+✓ orgs
+✓ orgs_list_for_user
+✓ outside_collaborators
+✓ packages
+✓ packages_list_packages_for_authenticated_user
+✓ pages
+✓ parent
+✓ participation
+✓ partner
+✓ paths
+✓ pattern_configurations
+✓ pending_deployments
+✓ permission
+✓ permissions_check
+✓ personal_access_token_requests
+✓ personal_access_tokens
+✓ platforms
+✓ private_registries
+✓ private_vulnerability_reporting
+✓ profile
+✓ projects_v2
+✓ protection
+✓ public_emails
+✓ public_key
+✓ public_members
+✓ pulls
+✓ pulls_list_review_comments
+✓ punch_card
+✓ rate_limit
+✓ reactions
+✓ readme
+✓ received_events
+✓ ref
+✓ referrers
+✓ releases
+✓ repo
+✓ repo_action_artifacts
+✓ repo_action_cache_usage
+✓ repo_action_jobs
+✓ repo_action_oidc_customization_sub
+✓ repo_action_permissions
+✓ repo_action_run_artifacts
+✓ repo_action_run_timing
+✓ repo_action_runs
+✓ repo_action_secrets
+✓ repo_action_variables
+✓ repo_action_workflow_runs
+✓ repo_action_workflow_timing
+✓ repo_branch_protection_restriction_apps
+✓ repo_branch_protection_restriction_teams
+✓ repo_branch_protection_restriction_users
+✓ repo_branches
+✓ repo_check_runs
+✓ repo_check_suites
+✓ repo_code_scanning_alerts
+✓ repo_code_scanning_codeql_variant_analyse_repos
+✓ repo_codespace_machines
+✓ repo_codespace_secrets
+✓ repo_commit_check_suites
+✓ repo_commit_statuses
+✓ repo_compare
+✓ repo_contributors
+✓ repo_dependabot_alerts
+✓ repo_dependabot_secrets
+✓ repo_dependency_graph_compare
+✓ repo_deployment_statuses
+✓ repo_deployments
+✓ repo_environment_deployment_protection_rule_apps
+✓ repo_environment_secret_public_key
+✓ repo_environment_secrets
+✓ repo_environment_variables
+✓ repo_forks
+✓ repo_git_commits
+✓ repo_git_tags
+✓ repo_hooks
+✓ repo_immutable_releases
+✓ repo_invitations
+✓ repo_issue_comments
+✓ repo_issue_events
+✓ repo_keys
+✓ repo_labels
+✓ repo_page_build_latest
+✓ repo_page_deployments
+✓ repo_property_values
+✓ repo_pull_comments
+✓ repo_pull_review_comments
+✓ repo_release_assets
+✓ repo_release_latest
+✓ repo_release_tags
+✓ repo_rule_branches
+✓ repo_secret_scanning_alerts
+✓ repo_stat_contributors
+✓ repo_subscription
+✓ repo_tags
+✓ repo_topics
+✓ repos
+✓ repos_get
+✓ repos_list_release_assets
+✓ repositories
+✓ repository_access
+✓ repository_invitations
+✓ requested_reviewers
+✓ required_pull_request_reviews
+✓ required_signatures
+✓ required_status_checks
+✓ restrictions
+✓ retention_limit
+✓ reviews
+✓ route_stats
+✓ rows
+✓ rule_suites
+✓ rulesets
+✓ runner_groups
+✓ runners
+✓ sarifs
+✓ sbom
+✓ scan_history
+✓ schema
+✓ seats
+✓ security_advisories
+✓ security_managers
+✓ selected_actions
+✓ self_hosted_runners
+✓ stargazers
+✓ status
+✓ storage_limit
+✓ storage_records
+✓ stubbed
+✓ sub_issues
+✓ subject_stats
+✓ subscribers
+✓ summary
+✓ team
+✓ teams
+✓ templates
+✓ threads
+✓ timeline
+✓ trees
+✓ usage
+✓ usage_by_repository
+✓ user
+✓ user_blocks
+✓ user_codespace_machines
+✓ user_codespace_secret_public_key
+✓ user_codespace_secrets
+✓ user_codespaces
+✓ user_docker_conflicts
+✓ user_event_orgs
+✓ user_event_public
+✓ user_followers
+✓ user_following
+✓ user_gpg_keys
+✓ user_installation_repositories
+✓ user_installations
+✓ user_interaction_limits
+✓ user_issues
+✓ user_keys
+✓ user_membership_orgs
+✓ user_migrations
+✓ user_orgs
+✓ user_packages
+✓ user_received_event_public
+✓ user_repos
+✓ user_setting_billing_usage
+✓ user_social_accounts
+✓ user_ssh_signing_keys
+✓ user_starred
+✓ user_stats
+✓ user_subscriptions
+✓ user_teams
+✓ users
+✓ users_1_day
+✓ users_list_followers_for_user
+✓ users_list_following_for_user
+✓ users_list_gpg_keys_for_user
+✓ users_list_public_keys_for_user
+✓ users_list_social_accounts_for_user
+✓ users_list_ssh_signing_keys_for_user
+✓ variant_analyses
+✓ versions
+✓ views
+✓ workflow
+✓ workflows
+✓ search_code({'name': 'q', 'required': True, 'values': []}, {'name': 'sort', 'required': False, 'values': []}, {'name': 'order', 'required': False, 'values': []})
+✓ search_commits({'name': 'q', 'required': True, 'values': []}, {'name': 'sort', 'required': False, 'values': []}, {'name': 'order', 'required': False, 'values': []})
+✓ search_issues({'name': 'q', 'required': True, 'values': []}, {'name': 'mode', 'required': False, 'values': ['lexical', 'semantic', 'hybrid']}, {'name': 'advanced', 'required': False, 'values': []}, {'name': 'sort', 'required': False, 'values': []}, {'name': 'order', 'required': False, 'values': []})
+✓ search_labels({'name': 'repository_id', 'required': True, 'values': []}, {'name': 'q', 'required': True, 'values': []}, {'name': 'sort', 'required': False, 'values': []}, {'name': 'order', 'required': False, 'values': []})
+✓ search_repositories({'name': 'q', 'required': True, 'values': []}, {'name': 'sort', 'required': False, 'values': []}, {'name': 'order', 'required': False, 'values': []})
+✓ search_topics({'name': 'q', 'required': True, 'values': []})
+✓ search_users({'name': 'q', 'required': True, 'values': []}, {'name': 'sort', 'required': False, 'values': []}, {'name': 'order', 'required': False, 'values': []})
+Sentry
+
+✓ Ready
+✓ deployments
+✓ discover
+✓ events
+✓ issue_participants
+✓ issue_tags
+✓ issues
+✓ members
+✓ project_events
+✓ projects
+✓ release_files
+✓ releases
+✓ teams
+PagerDuty
+
+✓ Ready
+✓ abilities
+✓ active
+✓ addons
+✓ alert_grouping_settings
+✓ analytic_raw_incidents
+✓ automation_action_action_services
+✓ automation_action_actions
+✓ business_service_subscribers
+✓ business_service_supporting_service_impacts
+✓ business_services
+✓ cache_variables
+✓ change_events
+✓ contact_methods
+✓ counts
+✓ custom_shifts
+✓ data
+✓ enablements
+✓ escalation_policies
+✓ event_orchestration_integrations
+✓ event_orchestration_services
+✓ event_orchestrations
+✓ events
+✓ extension_schemas
+✓ extensions
+✓ field_options
+✓ fields
+✓ global
+✓ impactors
+✓ impacts
+✓ incident_alerts
+✓ incident_custom_field_values
+✓ incident_custom_fields
+✓ incident_status_update_subscribers
+✓ incident_type_custom_fields
+✓ incident_workflow_actions
+✓ incident_workflows
+✓ incidents
+✓ invocations
+✓ license
+✓ license_allocations
+✓ licenses
+✓ list_overrides
+✓ list_schedules_v3
+✓ list_teams
+✓ log_entries
+✓ maintenance_windows
+✓ me
+✓ members
+✓ memories
+✓ notes
+✓ notification_rules
+✓ notification_subscriptions
+✓ notifications
+✓ oauth_clients
+✓ oauth_delegations
+✓ oncall_handoff_notification_rules
+✓ oncalls
+✓ outlier_incident
+✓ past_incidents
+✓ paused_incident_report_alerts
+✓ post_updates
+✓ postmortem
+✓ posts
+✓ priorities
+✓ priority_thresholds
+✓ records
+✓ related_change_events
+✓ related_incidents
+✓ responses
+✓ rotations
+✓ router
+✓ ruleset_rules
+✓ rulesets
+✓ runners
+✓ schedules
+✓ service_custom_field_field_options
+✓ service_custom_field_values
+✓ service_custom_fields
+✓ service_dependency_business_services
+✓ service_impacts
+✓ service_integrations
+✓ service_rules
+✓ services
+✓ session_configurations
+✓ severities
+✓ standard_scores
+✓ standards
+✓ standards_score
+✓ status_dashboards
+✓ status_page_impacts
+✓ status_page_services
+✓ status_pages
+✓ status_update_notification_rules
+✓ statuses
+✓ subscriptions
+✓ tag
+✓ tags
+✓ teams
+✓ technical_services
+✓ templates
+✓ triggers
+✓ types
+✓ unrouted
+✓ url_slugs
+✓ user_session
+✓ user_sessions
+✓ users
+✓ vendors
+✓ webhook_subscriptions
+✓ workflow_integration_connections
+✓ workflow_integrations
+✓ workflows_integration_connections
+Linear
+
+✓ Ready
+✓ attachments
+✓ cycles
+✓ initiatives
+✓ issue_labels
+✓ issues
+✓ projects
+✓ teams
+✓ users
+✓ issue_comments({'name': 'issue', 'required': True, 'values': []})
+✓ project_milestones({'name': 'project_id', 'required': True, 'values': []})
+✓ project_updates({'name': 'project_id', 'required': True, 'values': []})
+✓ team_issues({'name': 'team_id', 'required': True, 'values': []})
+Slack
+
+⚠ Degraded
+✓ channels
+✓ users
+✓ messages({'name': 'channel', 'required': True, 'values': []}, {'name': 'oldest', 'required': False, 'values': []}, {'name': 'latest', 'required': False, 'values': []})
+✓ thread_replies({'name': 'channel', 'required': True, 'values': []}, {'name': 'thread_ts', 'required': True, 'values': []}, {'name': 'oldest', 'required': False, 'values': []}, {'name': 'latest', 'required': False, 'values': []}, {'name': 'inclusive', 'required': False, 'values': []}, {'name': 'include_all_metadata', 'required': False, 'values': []})
+⚠ messages(): missing args channel, oldest, latest
+⚠ thread_replies(): missing args channel, thread_ts
+Live schema introspection · SELECT schema_name, COUNT(DISTINCT table_name), COUNT(*) FROM coral.columns GROUP BY 1
+Source
+Tables
+Columns
+Avg cols/table
+GitHub
+362
+19616
+54
+Sentry
+12
+90
+8
+PagerDuty
+112
+2910
+26
+Linear
+8
+96
+12
+Slack
+2
+15
+8
+CircleCI
+2
+22
+11
+Langfuse
+2
+27
+14
+DESCRIBE EXTENDED — planner metadata · recommended JOINs, query count, cache hit rate
+GitHub
+
+column_name: assignment
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__accepted
+data_type: Int64
+is_nullable: YES
+column_name: assignment__classroom
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__classroom__archived
+data_type: Boolean
+is_nullable: YES
+column_name: assignment__classroom__id
+data_type: Int64
+is_nullable: YES
+column_name: assignment__classroom__name
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__classroom__url
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__deadline
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__editor
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__feedback_pull_requests_enabled
+data_type: Boolean
+is_nullable: YES
+column_name: assignment__id
+data_type: Int64
+is_nullable: YES
+column_name: assignment__invitations_enabled
+data_type: Boolean
+is_nullable: YES
+column_name: assignment__invite_link
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__language
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__max_members
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__max_teams
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__passing
+data_type: Int64
+is_nullable: YES
+column_name: assignment__public_repo
+data_type: Boolean
+is_nullable: YES
+column_name: assignment__slug
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__students_are_repo_admins
+data_type: Boolean
+is_nullable: YES
+column_name: assignment__submitted
+data_type: Int64
+is_nullable: YES
+column_name: assignment__title
+data_type: Utf8
+is_nullable: YES
+column_name: assignment__type
+data_type: Utf8
+is_nullable: YES
+column_name: assignment_id
+data_type: Int64
+is_nullable: YES
+column_name: commit_count
+data_type: Int64
+is_nullable: YES
+column_name: grade
+data_type: Utf8
+is_nullable: YES
+column_name: id
+data_type: Int64
+is_nullable: YES
+column_name: passing
+data_type: Boolean
+is_nullable: YES
+column_name: repository
+data_type: Utf8
+is_nullable: YES
+column_name: repository__default_branch
+data_type: Utf8
+is_nullable: YES
+column_name: repository__full_name
+data_type: Utf8
+is_nullable: YES
+column_name: repository__html_url
+data_type: Utf8
+is_nullable: YES
+column_name: repository__id
+data_type: Int64
+is_nullable: YES
+column_name: repository__node_id
+data_type: Utf8
+is_nullable: YES
+column_name: repository__private
+data_type: Boolean
+is_nullable: YES
+column_name: students
+data_type: Utf8
+is_nullable: YES
+column_name: submitted
+data_type: Boolean
+is_nullable: YES
+Sentry
+
+column_name: id
+data_type: Utf8
+is_nullable: NO
+column_name: version
+data_type: Utf8
+is_nullable: YES
+column_name: environment
+data_type: Utf8
+is_nullable: YES
+column_name: name
+data_type: Utf8
+is_nullable: YES
+column_name: date_started
+data_type: Utf8
+is_nullable: YES
+column_name: date_finished
+data_type: Utf8
+is_nullable: YES
+column_name: url
+data_type: Utf8
+is_nullable: YES
+PagerDuty
+
+column_name: abilities
+data_type: Utf8
+is_nullable: YES
+Linear
+
+column_name: id
+data_type: Utf8
+is_nullable: NO
+column_name: title
+data_type: Utf8
+is_nullable: NO
+column_name: subtitle
+data_type: Utf8
+is_nullable: YES
+column_name: url
+data_type: Utf8
+is_nullable: NO
+column_name: source_type
+data_type: Utf8
+is_nullable: YES
+column_name: issue_id
+data_type: Utf8
+is_nullable: YES
+column_name: issue_identifier
+data_type: Utf8
+is_nullable: YES
+column_name: creator_id
+data_type: Utf8
+is_nullable: YES
+column_name: creator_name
+data_type: Utf8
+is_nullable: YES
+column_name: created_at
+data_type: Utf8
+is_nullable: YES
+column_name: updated_at
+data_type: Utf8
+is_nullable: YES
+Slack
+
+column_name: id
+data_type: Utf8
+is_nullable: NO
+column_name: name
+data_type: Utf8
+is_nullable: NO
+column_name: topic
+data_type: Utf8
+is_nullable: YES
+column_name: purpose
+data_type: Utf8
+is_nullable: YES
+column_name: num_members
+data_type: Int64
+is_nullable: YES
+column_name: is_archived
+data_type: Boolean
+is_nullable: NO
+column_name: created
+data_type: Int64
+is_nullable: NO
+CircleCI
+
+column_name: project_slug
+data_type: Utf8
+is_nullable: YES
+column_name: id
+data_type: Utf8
+is_nullable: NO
+column_name: number
+data_type: Int64
+is_nullable: YES
+column_name: state
+data_type: Utf8
+is_nullable: YES
+column_name: trigger_type
+data_type: Utf8
+is_nullable: YES
+column_name: trigger_actor_login
+data_type: Utf8
+is_nullable: YES
+column_name: vcs_branch
+data_type: Utf8
+is_nullable: YES
+column_name: vcs_revision
+data_type: Utf8
+is_nullable: YES
+column_name: vcs_commit_subject
+data_type: Utf8
+is_nullable: YES
+column_name: vcs_origin_repository_url
+data_type: Utf8
+is_nullable: YES
+column_name: created_at
+data_type: Utf8
+is_nullable: YES
+column_name: updated_at
+data_type: Utf8
+is_nullable: YES
+Langfuse
+
+column_name: id
+data_type: Utf8
+is_nullable: NO
+column_name: trace_id
+data_type: Utf8
+is_nullable: YES
+column_name: name
+data_type: Utf8
+is_nullable: YES
+column_name: type
+data_type: Utf8
+is_nullable: YES
+column_name: model
+data_type: Utf8
+is_nullable: YES
+column_name: start_time
+data_type: Utf8
+is_nullable: YES
+column_name: end_time
+data_type: Utf8
+is_nullable: YES
+column_name: latency
+data_type: Float64
+is_nullable: YES
+column_name: usage__input
+data_type: Int64
+is_nullable: YES
+column_name: usage__output
+data_type: Int64
+is_nullable: YES
+column_name: usage__total
+data_type: Int64
+is_nullable: YES
+column_name: calculated_cost
+data_type: Float64
+is_nullable: YES
+column_name: prompt_name
+data_type: Utf8
+is_nullable: YES
+18 more sources available · coral source add --interactive <name>
+Source
+clickup
+cloudwatch_logs
+cloudwatch_metrics
+confluence
+datadog
+gitlab
+grafana
+incident_io
+intercom
+jira
+launchdarkly
+notion
+openobserve
+posthog
+statusgator
+stripe
+wandb
+RajdeepKushwaha5
+
+Helm
+
+Live
+Coral Ops Intelligence
+
+Mission Control
+
+Live Monitor
+
+Root Cause
+
+Ask Helm
+
+Token ROI
+
+Lighthouse
+Incident Chain
+
+
+Constellation
+
+Cascade Warning
+Attribution
+
+
+MTTR Attribution
+
+Release Impact
+
+Release Attribution
+
+Deploy Trend
+Team
+
+
+Team Health
+
+Workload Risk
+
+Ticket Pressure
+
+Service Health
+CI & Review
+
+
+CI Health
+
+Review Debt Aging
+
+Ticket Thread Tracker
+Agents & Actions
+
+
+PR Review Agent
+
+Self-Heal
+
+Risk Scorecard
+
+Approval Queue
+
+Handover Brief
+Workspace
+
+
+How Helm Works
+
+SQL Sandbox
+
+Source setup
+
+SQL proofs
+8 live sources · 1 SQL layer
+
+GitHub · Sentry · PagerDuty · Linear · Slack · Adzuna · HackerNews · Langfuse — joined by Coral, no ETL.
+Search incidents, releases, services
+K
+12
+SQL queries
+10
+cross-source
+~148x MCP saved
+
+
+RJ
+Rajdeep
+
+SQL proofs
+Audit trail
+
+SQL Proofs
+Review every Coral query proof currently powering Helm: sources, joins, rows, columns, and runtime.
+Ask Helm
+Investigate Signal
+Proofs
+4
+
+Review
+Inspectable
+
+Mode
+Read only
+
+SQL Proof Workspace
+
+Every visible result in Helm is backed by an inspectable Coral SQL proof.
+...
+
+proofs ok
+...
+
+cross-source joins
+...
+
+rows returned
+Workspace SQL proof pack
+11/11 query proofs ok
+External source data is treated as structured evidence, not instructions. Helm writes nothing without human approval.
+Team Health Pulse
+
+github
+linear
+sentry
+cross-source
+ok · 1 rows · 6091ms
+Visual output
+SQL query
+github
+JOIN
+linear
+JOIN
+sentry
+1
+
+rows returned
+
+12
+
+columns visible
+
+6091ms
+
+runtime
+
+author	total prs	late night prs	off hours prs	last pr date
+RajdeepKushwaha5	18	4	8	2026-05-22
+Recent GitHub PRs
+
+github
+ok · 23 rows · 2005ms
+Service instability
+
+sentry
+pagerduty
+cross-source
+ok · 0 rows · 6344ms
+MTTR from PagerDuty
+
+pagerduty
+ok · 1 rows · 2615ms
+Team Health Pulse (engineers)
+
+github
+linear
+sentry
+cross-source
+ok · 1 rows · 6091ms
+Service instability
+
+sentry
+pagerduty
+cross-source
+ok · 0 rows · 6344ms
+Deployment errors
+
+github
+sentry
+cross-source
+ok · 9 rows · 5840ms
+Root cause constellation
+
+github
+sentry
+pagerduty
+slack
+cross-source
+ok · 9 rows · 13603ms
+Incident constellation graph
+
+github
+sentry
+pagerduty
+slack
+cross-source
+ok · 8 rows · 9987ms
+Review Debt Aging: open PRs vs live Sentry errors (GitHub × Sentry)
+
+github
+sentry
+cross-source
+ok · 5 rows · 4322ms
+Visual output
+SQL query
+github
+JOIN
+sentry
+5
+
+rows returned
+
+11
+
+columns visible
+
+4322ms
+
+runtime
+
+pr number	pr title	author	created at	today
+19	fix: null guard on payment processor response	RajdeepKushwaha5	2026-05-27T22:13:48Z	2026-05-30
+20	fix: clear cart on session expiry to prevent stale checkout	RajdeepKushwaha5	2026-05-27T22:13:54Z	2026-05-30
+21	fix: atomic inventory decrement to prevent overselling	RajdeepKushwaha5	2026-05-27T22:13:59Z	2026-05-30
+22	feat: exponential back-off retry for inventory service calls	RajdeepKushwaha5	2026-05-27T22:14:05Z	2026-05-30
+23	fix: reject expired JWTs before checkout proceeds	RajdeepKushwaha5	2026-05-27T22:14:10Z	2026-05-30
+Linear × Slack Ticket Thread Tracker
+
+linear
+slack
+cross-source
+ok · 0 rows · 2470ms
+RajdeepKushwaha5
+

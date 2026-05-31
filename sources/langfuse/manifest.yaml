@@ -1,0 +1,400 @@
+name: langfuse
+version: 0.1.0
+dsl_version: 3
+backend: http
+description: >-
+  Query Langfuse LLM observability data as SQL tables. Inspect traces
+  (end-to-end AI operations), observations (individual LLM calls), and sessions.
+  Join with Linear, GitHub, and Sentry for cross-source AI cost attribution —
+  the missing link between what you spent on tokens and what you shipped.
+
+base_url: "{{input.LANGFUSE_HOST}}"
+
+inputs:
+  LANGFUSE_HOST:
+    kind: variable
+    default: https://cloud.langfuse.com
+    hint: |
+      Your Langfuse host URL. Default: https://cloud.langfuse.com
+      For EU region: https://cloud.langfuse.com (same host, different project)
+      For self-hosted: https://your-langfuse-domain.com
+  LANGFUSE_PUBLIC_KEY:
+    kind: variable
+    hint: |
+      Your Langfuse project public key (starts with pk-lf-).
+      Found in Langfuse → Settings → API Keys.
+  LANGFUSE_SECRET_KEY:
+    kind: secret
+    hint: |
+      Your Langfuse project secret key (starts with sk-lf-).
+      Found in Langfuse → Settings → API Keys.
+      Keep this secret — it grants read access to all your traces.
+
+      To join traces to Linear tickets, instrument your app to pass metadata:
+        langfuse.trace({ metadata: { linearId: 'LIN-123', featureTag: 'billing-agent', team: 'platform' } })
+
+auth:
+  type: BasicAuth
+  username: "{{input.LANGFUSE_PUBLIC_KEY}}"
+  password: "{{input.LANGFUSE_SECRET_KEY}}"
+
+request_headers:
+  - name: Accept
+    from: literal
+    value: application/json
+
+rate_limit:
+  extra_statuses:
+    - 429
+  retry_after_header: Retry-After
+
+test_queries:
+  - SELECT id, name, calculated_total_cost FROM langfuse.traces ORDER BY timestamp DESC LIMIT 1
+  - SELECT id, type, model, calculated_cost FROM langfuse.observations WHERE type = 'GENERATION' LIMIT 1
+
+tables:
+  - name: traces
+    description: >-
+      LLM traces from Langfuse. Each row is one end-to-end AI operation —
+      an agent run, user request, or pipeline execution. Includes token usage,
+      cost, latency, and custom metadata fields. Join to langfuse.observations
+      on id = trace_id to get individual LLM call details. Use metadata__linear_id
+      to link to Linear tickets, and metadata__feature_tag to group by feature.
+    guide: |
+      Use from_timestamp and to_timestamp to limit the time range (ISO 8601).
+      Set metadata in your app when creating traces:
+        langfuse.trace({ metadata: { linearId: 'LIN-123', featureTag: 'billing-agent' } })
+
+      Key fields for TokenLens patterns:
+        calculated_total_cost — USD cost for this trace (null if model pricing not configured)
+        usage__total          — total tokens (input + output)
+        metadata__linear_id   — linked Linear ticket ID
+        metadata__feature_tag — feature/product area tag
+        session_id            — group traces; high observation count per session = loop waste
+
+      Status codes: status can be 'SUCCESS', 'ERROR', or null
+    fetch_limit_default: 500
+    filters:
+      - name: from_timestamp
+        required: false
+      - name: to_timestamp
+        required: false
+      - name: user_id
+        required: false
+      - name: session_id
+        required: false
+      - name: name
+        required: false
+    request:
+      method: GET
+      path: /api/public/traces
+      query:
+        - name: fromTimestamp
+          from: filter
+          key: from_timestamp
+        - name: toTimestamp
+          from: filter
+          key: to_timestamp
+        - name: userId
+          from: filter
+          key: user_id
+        - name: sessionId
+          from: filter
+          key: session_id
+        - name: name
+          from: filter
+          key: name
+    response:
+      rows_path:
+        - data
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 1
+      page_step: 1
+      page_size:
+        default: 50
+        max: 100
+        query_param: limit
+    columns:
+      - name: id
+        type: Utf8
+        nullable: false
+        description: Unique trace ID
+        expr:
+          kind: path
+          path:
+            - id
+      - name: name
+        type: Utf8
+        nullable: true
+        description: Trace name — the AI operation label (e.g. customer-rag-pipeline)
+        expr:
+          kind: path
+          path:
+            - name
+      - name: timestamp
+        type: Utf8
+        nullable: true
+        description: Trace creation timestamp (ISO 8601)
+        expr:
+          kind: path
+          path:
+            - timestamp
+      - name: user_id
+        type: Utf8
+        nullable: true
+        description: User or team member identifier
+        expr:
+          kind: path
+          path:
+            - userId
+      - name: session_id
+        type: Utf8
+        nullable: true
+        description: Session grouping ID; high observation count per session indicates loop waste
+        expr:
+          kind: path
+          path:
+            - sessionId
+      - name: release
+        type: Utf8
+        nullable: true
+        description: Application release version tag
+        expr:
+          kind: path
+          path:
+            - release
+      - name: latency
+        type: Float64
+        nullable: true
+        description: End-to-end latency in milliseconds
+        expr:
+          kind: path
+          path:
+            - latency
+      - name: usage__input
+        type: Int64
+        nullable: true
+        description: Input token count
+        expr:
+          kind: path
+          path:
+            - usage
+            - input
+      - name: usage__output
+        type: Int64
+        nullable: true
+        description: Output token count
+        expr:
+          kind: path
+          path:
+            - usage
+            - output
+      - name: usage__total
+        type: Int64
+        nullable: true
+        description: Total token count (input + output)
+        expr:
+          kind: path
+          path:
+            - usage
+            - total
+      - name: calculated_total_cost
+        type: Float64
+        nullable: true
+        description: Total cost in USD for this trace (sum of observation costs).
+        expr:
+          kind: path
+          path:
+            - totalCost
+      - name: metadata__linear_id
+        type: Utf8
+        nullable: true
+        description: >-
+          Custom metadata — Linear ticket ID. Populate via
+          langfuse.trace({ metadata: { linearId: 'LIN-123' } })
+        expr:
+          kind: path
+          path:
+            - metadata
+            - linearId
+      - name: metadata__feature_tag
+        type: Utf8
+        nullable: true
+        description: Custom metadata — feature or product area tag for cost grouping
+        expr:
+          kind: path
+          path:
+            - metadata
+            - featureTag
+      - name: metadata__team
+        type: Utf8
+        nullable: true
+        description: Custom metadata — engineering team responsible for this operation
+        expr:
+          kind: path
+          path:
+            - metadata
+            - team
+
+  - name: observations
+    description: >-
+      Individual LLM calls (GENERATION), tool calls (SPAN), and events (EVENT)
+      within a trace. Use to detect loop waste (high GENERATION count per trace),
+      model mismatches (expensive model, low token count), and per-call cost.
+      Join to langfuse.traces on trace_id = id for operation context.
+    guide: |
+      Filter by type = 'GENERATION' to get only LLM calls (not tool calls or spans).
+      High COUNT(id) per trace_id indicates a runaway agent loop.
+
+      model values include: claude-opus-4, claude-sonnet-4, claude-haiku-4,
+      gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-2.0-flash, etc.
+
+      calculated_cost is the USD cost for this single LLM call.
+    fetch_limit_default: 1000
+    filters:
+      - name: trace_id
+        required: false
+      - name: type
+        required: false
+      - name: model
+        required: false
+      - name: from_start_time
+        required: false
+    request:
+      method: GET
+      path: /api/public/observations
+      query:
+        - name: traceId
+          from: filter
+          key: trace_id
+        - name: type
+          from: filter
+          key: type
+        - name: model
+          from: filter
+          key: model
+        - name: fromStartTime
+          from: filter
+          key: from_start_time
+    response:
+      rows_path:
+        - data
+    pagination:
+      mode: page
+      page_param: page
+      page_start: 1
+      page_step: 1
+      page_size:
+        default: 50
+        max: 100
+        query_param: limit
+    columns:
+      - name: id
+        type: Utf8
+        nullable: false
+        description: Unique observation ID
+        expr:
+          kind: path
+          path:
+            - id
+      - name: trace_id
+        type: Utf8
+        nullable: true
+        description: Parent trace ID — join to langfuse.traces on id
+        expr:
+          kind: path
+          path:
+            - traceId
+      - name: name
+        type: Utf8
+        nullable: true
+        description: Observation or span name
+        expr:
+          kind: path
+          path:
+            - name
+      - name: type
+        type: Utf8
+        nullable: true
+        description: "GENERATION (LLM call) | SPAN (tool call) | EVENT"
+        expr:
+          kind: path
+          path:
+            - type
+      - name: model
+        type: Utf8
+        nullable: true
+        description: Model name (e.g. claude-opus-4, gpt-4o, claude-haiku-4)
+        expr:
+          kind: path
+          path:
+            - model
+      - name: start_time
+        type: Utf8
+        nullable: true
+        description: Start time (ISO 8601)
+        expr:
+          kind: path
+          path:
+            - startTime
+      - name: end_time
+        type: Utf8
+        nullable: true
+        description: End time (ISO 8601)
+        expr:
+          kind: path
+          path:
+            - endTime
+      - name: latency
+        type: Float64
+        nullable: true
+        description: Latency in milliseconds
+        expr:
+          kind: path
+          path:
+            - latency
+      - name: usage__input
+        type: Int64
+        nullable: true
+        description: Input token count for this LLM call
+        expr:
+          kind: path
+          path:
+            - usage
+            - input
+      - name: usage__output
+        type: Int64
+        nullable: true
+        description: Output token count
+        expr:
+          kind: path
+          path:
+            - usage
+            - output
+      - name: usage__total
+        type: Int64
+        nullable: true
+        description: Total tokens for this observation
+        expr:
+          kind: path
+          path:
+            - usage
+            - total
+      - name: calculated_cost
+        type: Float64
+        nullable: true
+        description: Cost in USD for this single LLM call
+        expr:
+          kind: path
+          path:
+            - calculatedTotalCost
+      - name: prompt_name
+        type: Utf8
+        nullable: true
+        description: Named prompt used, if any
+        expr:
+          kind: path
+          path:
+            - promptName
